@@ -3,6 +3,7 @@ var chalk = require('chalk');
 var cliCursor = require('cli-cursor');
 var cliSpinners = require('cli-spinners');
 var objectAssign = require('object-assign');
+var EOL = require('os').EOL;
 
 function Ora(options) {
 	if (!(this instanceof Ora)) {
@@ -18,6 +19,7 @@ function Ora(options) {
 	this.options = objectAssign({
 		text: '',
 		color: 'cyan',
+		split: false, // seperate tasks by text value
 		stream: process.stderr
 	}, options);
 
@@ -35,7 +37,27 @@ function Ora(options) {
 	this.id = null;
 	this.frameIndex = 0;
 	this.enabled = (this.stream && this.stream.isTTY) && !process.env.CI;
+	this.completed = '√';
 }
+
+Ora.prototype.setColor = function (color) {
+	this.color = color;
+};
+
+Ora.prototype.setText = function (text) {
+	if (this.options.split) {
+		if (this.text !== text) {
+			this.complete();
+		}
+	}
+	this.text = text;
+};
+
+Ora.prototype.complete = function () {
+	this.clear();
+	var tick = chalk.green(this.completed);
+	this.render(tick + ' ' + this.text + EOL);
+};
 
 Ora.prototype.frame = function () {
 	var frames = this.spinner.frames;
@@ -59,9 +81,10 @@ Ora.prototype.clear = function () {
 	this.stream.cursorTo(0);
 };
 
-Ora.prototype.render = function () {
+Ora.prototype.render = function (buffer) {
+	buffer = buffer ? buffer : this.frame();
 	this.clear();
-	this.stream.write(this.frame());
+	this.stream.write(buffer);
 };
 
 Ora.prototype.start = function () {
@@ -72,6 +95,11 @@ Ora.prototype.start = function () {
 	cliCursor.hide();
 	this.render();
 	this.id = setInterval(this.render.bind(this), this.interval);
+};
+
+Ora.prototype.done = function () {
+	this.complete();
+	this.stop();
 };
 
 Ora.prototype.stop = function () {
