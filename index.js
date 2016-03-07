@@ -5,6 +5,16 @@ var cliSpinners = require('cli-spinners');
 var objectAssign = require('object-assign');
 
 function Ora(options) {
+	if (!(this instanceof Ora)) {
+		return new Ora(options);
+	}
+
+	if (typeof options === 'string') {
+		options = {
+			text: options
+		};
+	}
+
 	this.options = objectAssign({
 		text: '',
 		color: 'cyan',

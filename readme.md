@@ -15,9 +15,9 @@ $ npm install --save ora
 ## Usage
 
 ```js
-const Ora = require('ora');
+const ora = require('ora');
 
-const spinner = new Ora({text: 'Loading unicorns'});
+const spinner = ora('Loading unicorns');
 
 spinner.start();
 
@@ -32,9 +32,13 @@ setTimeout(() => {
 
 It will gracefully not do anything when there's no TTY or when in a CI.
 
-### Ora([options])
+### ora([options])
 
 #### options
+
+Type: `string` `object`
+
+If a string is provided, it is treated as a shortcut for [`options.text`](#text). The rest of the options listed below will use their default values.
 
 ##### text
 
