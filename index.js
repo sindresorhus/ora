@@ -65,7 +65,7 @@ Ora.prototype.render = function () {
 };
 
 Ora.prototype.start = function () {
-	if (!this.enabled) {
+	if (!this.enabled || this.id) {
 		return;
 	}
 
