@@ -1,5 +1,6 @@
 import test from 'ava';
 import hookStd from 'hook-std';
+import cliSpinners from 'cli-spinners';
 import Ora from './';
 
 function readOutput(spinner, callback) {
@@ -32,7 +33,8 @@ test('main', t => {
 	spinner.enabled = true;
 
 	readOutput(spinner, (output) => {
-		t.is(output, '⠋ foo');
+		let expectedOutput = process.platform === 'win32' ? '- foo' : '⠋ foo';
+		t.is(output, expectedOutput);
 	});
 });
 
@@ -46,7 +48,8 @@ test('title shortcut', t => {
 	spinner.enabled = true;
 
 	readOutput(spinner, (output) => {
-		t.is(output, '⠋ foo');
+		let expectedOutput = process.platform === 'win32' ? '- foo' : '⠋ foo';
+		t.is(output, expectedOutput);
 	});
 });
 
