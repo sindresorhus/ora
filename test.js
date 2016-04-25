@@ -1,6 +1,5 @@
 import test from 'ava';
 import hookStd from 'hook-std';
-import cliSpinners from 'cli-spinners';
 import Ora from './';
 
 function readOutput(spinner, callback) {
