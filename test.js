@@ -1,5 +1,7 @@
 import test from 'ava';
 import hookStd from 'hook-std';
+import stripAnsi from 'strip-ansi';
+import cliSpinners from 'cli-spinners';
 import Ora from './';
 
 function readOutput(spinner, callback) {
@@ -27,11 +29,12 @@ test.before(() => {
 test('main', t => {
 	t.plan(1);
 
-	const spinner = new Ora({text: 'foo', color: false});
+	const spinner = new Ora({text: 'foo', color: false, spinner: cliSpinners.dots});
 
 	spinner.enabled = true;
 
 	readOutput(spinner, (output) => {
+		output = stripAnsi(output);
 		t.is(output, '⠋ foo');
 	});
 });
@@ -44,8 +47,10 @@ test('title shortcut', t => {
 
 	spinner.color = false;
 	spinner.enabled = true;
+	spinner.spinner = cliSpinners.dots;
 
 	readOutput(spinner, (output) => {
+		output = stripAnsi(output);
 		t.is(output, '⠋ foo');
 	});
 });
