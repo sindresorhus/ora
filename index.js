@@ -1,4 +1,5 @@
 'use strict';
+var readline = require('readline');
 var chalk = require('chalk');
 var cliCursor = require('cli-cursor');
 var cliSpinners = require('cli-spinners');
@@ -34,7 +35,7 @@ function Ora(options) {
 	this.stream = this.options.stream;
 	this.id = null;
 	this.frameIndex = 0;
-	this.enabled = (this.stream && this.stream.isTTY) && !process.env.CI;
+	this.enabled = process.env.FORCE_ORA || ((this.stream && this.stream.isTTY) && !process.env.CI);
 }
 
 Ora.prototype.frame = function () {
@@ -55,8 +56,8 @@ Ora.prototype.clear = function () {
 		return;
 	}
 
-	this.stream.clearLine();
-	this.stream.cursorTo(0);
+	readline.clearLine(this.stream);
+	readline.cursorTo(this.stream, 0);
 };
 
 Ora.prototype.render = function () {
