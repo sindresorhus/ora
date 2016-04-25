@@ -1,9 +1,9 @@
 'use strict';
+var readline = require('readline');
 var chalk = require('chalk');
 var cliCursor = require('cli-cursor');
 var cliSpinners = require('cli-spinners');
 var objectAssign = require('object-assign');
-var readline = require('readline');
 
 function Ora(options) {
 	if (!(this instanceof Ora)) {
