@@ -72,6 +72,8 @@ Ora.prototype.start = function () {
 	cliCursor.hide();
 	this.render();
 	this.id = setInterval(this.render.bind(this), this.interval);
+
+	return this;
 };
 
 Ora.prototype.stop = function () {

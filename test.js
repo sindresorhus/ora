@@ -64,3 +64,8 @@ test('ignore consecutive calls to `.start()`', t => {
 	spinner.start();
 	t.is(id, spinner.id);
 });
+
+test('chain call to `.start()` with constructor', t => {
+	const spinner = new Ora('foo').start();
+	t.truthy(spinner.id);
+});
