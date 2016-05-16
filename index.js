@@ -34,7 +34,7 @@ function Ora(options) {
 	this.stream = this.options.stream;
 	this.id = null;
 	this.frameIndex = 0;
-	this.enabled = (this.stream && this.stream.isTTY) && !process.env.CI;
+	this.enabled = this.options.enabled || ((this.stream && this.stream.isTTY) && !process.env.CI);
 }
 
 Ora.prototype.frame = function () {
@@ -57,11 +57,15 @@ Ora.prototype.clear = function () {
 
 	this.stream.clearLine();
 	this.stream.cursorTo(0);
+
+	return this;
 };
 
 Ora.prototype.render = function () {
 	this.clear();
 	this.stream.write(this.frame());
+
+	return this;
 };
 
 Ora.prototype.start = function () {
@@ -86,6 +90,8 @@ Ora.prototype.stop = function () {
 	this.frameIndex = 0;
 	this.clear();
 	cliCursor.show();
+
+	return this;
 };
 
 module.exports = Ora;

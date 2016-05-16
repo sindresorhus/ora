@@ -17,9 +17,7 @@ $ npm install --save ora
 ```js
 const ora = require('ora');
 
-const spinner = ora('Loading unicorns');
-
-spinner.start();
+const spinner = ora('Loading unicorns').start();
 
 setTimeout(() => {
 	spinner.color = 'yellow';
@@ -88,27 +86,34 @@ Stream to write the output.
 
 You could for example set this to `process.stdout` instead.
 
+##### enabled
+
+Type: `boolean`<br>
+Default: `false`
+
+Force enabling of the spinner regardless of the `stream` not being run inside a TTY context and/or in a CI environment.
+
 ### Instance
 
 #### .start()
 
-Start the spinner.
+Start the spinner. Returns the instance.
 
 #### .stop()
 
-Stop and clear the spinner.
+Stop and clear the spinner. Returns the instance.
 
 #### .clear()
 
-Clear the spinner.
+Clear the spinner. Returns the instance.
+
+#### .render()
+
+Manually render a new frame. Returns the instance.
 
 #### .frame()
 
 Get a new frame.
-
-#### .render()
-
-Manually render a new frame.
 
 #### .text
 

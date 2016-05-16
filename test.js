@@ -29,9 +29,11 @@ test.before(() => {
 test('main', t => {
 	t.plan(1);
 
-	const spinner = new Ora({text: 'foo', color: false});
-
-	spinner.enabled = true;
+	const spinner = new Ora({
+		text: 'foo',
+		color: false,
+		enabled: true
+	});
 
 	readOutput(spinner, (output) => {
 		t.is(output, `${spinnerChar} foo`);
@@ -66,6 +68,11 @@ test('ignore consecutive calls to `.start()`', t => {
 });
 
 test('chain call to `.start()` with constructor', t => {
-	const spinner = new Ora('foo').start();
+	const spinner = new Ora({
+		text: 'foo',
+		enabled: true
+	}).start();
+
 	t.truthy(spinner.id);
+	t.true(spinner.enabled);
 });
