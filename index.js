@@ -4,6 +4,19 @@ var cliCursor = require('cli-cursor');
 var cliSpinners = require('cli-spinners');
 var objectAssign = require('object-assign');
 
+var spinner = {
+	frames: [
+		'⡇',
+		'⠏',
+		'⠛',
+		'⠹',
+		'⢸',
+		'⣰',
+		'⣤',
+		'⣆'
+	]
+};
+
 function Ora(options) {
 	if (!(this instanceof Ora)) {
 		return new Ora(options);
@@ -22,7 +35,7 @@ function Ora(options) {
 	}, options);
 
 	var sp = this.options.spinner;
-	this.spinner = typeof sp === 'object' ? sp : (process.platform === 'win32' ? cliSpinners.line : (cliSpinners[sp] || cliSpinners.dots)); // eslint-disable-line
+	this.spinner = typeof sp === 'object' ? sp : (process.platform === 'win32' ? cliSpinners.line : (cliSpinners[sp] || spinner)); // eslint-disable-line
 
 	if (this.spinner.frames === undefined) {
 		throw new Error('Spinner must define `frames`');
