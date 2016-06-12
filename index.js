@@ -4,16 +4,16 @@ var cliCursor = require('cli-cursor');
 var cliSpinners = require('cli-spinners');
 var objectAssign = require('object-assign');
 
+
+
 var spinner = {
 	frames: [
-		'⡇',
+		'⠧',
 		'⠏',
 		'⠛',
 		'⠹',
-		'⢸',
-		'⣰',
-		'⣤',
-		'⣆'
+		'⠼',
+		'⠶'
 	]
 };
 
