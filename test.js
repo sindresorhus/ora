@@ -1,57 +1,59 @@
+import {PassThrough as PassThroughStream} from 'stream';
+import getStream from 'get-stream';
 import test from 'ava';
-import hookStd from 'hook-std';
 import Ora from './';
 
 const spinnerChar = process.platform === 'win32' ? '-' : '⠋';
+const noop = () => {};
 
-function readOutput(spinner, callback) {
-	let out = '';
+const getPassThroughStream = () => {
+	const stream = new PassThroughStream();
+	stream.isTTY = true;
+	stream.clearLine = noop;
+	stream.cursorTo = noop;
 
-	const unhook = hookStd.stderr({silent: true}, output => {
-		out += output;
-	});
+	return stream;
+};
 
-	spinner.start();
-	spinner.stop();
-	unhook();
-
-	callback(out);
-}
-
-test.before(() => {
-	// TODO: use the the `stream` option instead of hooking stderr
-
-	process.stderr.isTTY = true;
-	process.stderr.clearLine = function () {};
-	process.stderr.cursorTo = function () {};
-});
-
-test('main', t => {
+test('main', async t => {
 	t.plan(1);
 
+	const stream = getPassThroughStream();
+
 	const spinner = new Ora({
+		stream,
 		text: 'foo',
 		color: false,
 		enabled: true
 	});
 
-	readOutput(spinner, output => {
-		t.is(output, `${spinnerChar} foo`);
-	});
+	spinner.start();
+	spinner.stop();
+
+	stream.end();
+	const output = await getStream(stream);
+
+	t.is(output, `${spinnerChar} foo`);
 });
 
-test('title shortcut', t => {
+test('title shortcut', async t => {
 	t.plan(1);
 
+	const stream = getPassThroughStream();
 	const ora = Ora;
 	const spinner = ora('foo');
+	spinner.stream = stream;
 
 	spinner.color = false;
 	spinner.enabled = true;
 
-	readOutput(spinner, output => {
-		t.is(output, `${spinnerChar} foo`);
-	});
+	spinner.start();
+	spinner.stop();
+
+	stream.end();
+	const output = await getStream(stream);
+
+	t.is(output, `${spinnerChar} foo`);
 });
 
 test('`.id` is not set when created', t => {
@@ -69,6 +71,7 @@ test('ignore consecutive calls to `.start()`', t => {
 
 test('chain call to `.start()` with constructor', t => {
 	const spinner = new Ora({
+		stream: getPassThroughStream(),
 		text: 'foo',
 		enabled: true
 	}).start();

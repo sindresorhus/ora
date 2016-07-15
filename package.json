@@ -42,7 +42,7 @@
   },
   "devDependencies": {
     "ava": "*",
-    "hook-std": "^0.2.0",
+    "get-stream": "^2.3.0",
     "xo": "*"
   }
 }
