@@ -107,7 +107,7 @@ Stop and clear the spinner. Returns the instance.
 
 Stop the spinner, change it to a green `✔` and persists the `text`. See the gif below. Returns the instance.
 
-### .failn()
+### .fail()
 
 Stop the spinner, change it to a red `✖` and persists the `text`. See the gif below. Returns the instance.
 
