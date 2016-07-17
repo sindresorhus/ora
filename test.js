@@ -1,6 +1,7 @@
 import {PassThrough as PassThroughStream} from 'stream';
 import getStream from 'get-stream';
 import test from 'ava';
+import {stripColor} from 'chalk';
 import Ora from './';
 
 const spinnerChar = process.platform === 'win32' ? '-' : '⠋';
@@ -77,4 +78,67 @@ test('chain call to `.start()` with constructor', t => {
 
 	t.truthy(spinner.id);
 	t.true(spinner.enabled);
+});
+
+test('succeed', async t => {
+	t.plan(1);
+
+	const stream = getPassThroughStream();
+
+	const spinner = new Ora({
+		stream,
+		text: 'foo',
+		color: false,
+		enabled: true
+	});
+
+	spinner.start();
+	spinner.succeed();
+
+	stream.end();
+	const output = await getStream(stream);
+
+	t.regex(stripColor(output), /✔|√ foo/);
+});
+
+test('fail', async t => {
+	t.plan(1);
+
+	const stream = getPassThroughStream();
+
+	const spinner = new Ora({
+		stream,
+		text: 'foo',
+		color: false,
+		enabled: true
+	});
+
+	spinner.start();
+	spinner.fail();
+
+	stream.end();
+	const output = await getStream(stream);
+
+	t.regex(stripColor(output), /✖|× foo/);
+});
+
+test('stopAndPersist', async t => {
+	t.plan(1);
+
+	const stream = getPassThroughStream();
+
+	const spinner = new Ora({
+		stream,
+		text: 'foo',
+		color: false,
+		enabled: true
+	});
+
+	spinner.start();
+	spinner.stopAndPersist('@');
+
+	stream.end();
+	const output = await getStream(stream);
+
+	t.regex(output, /@ foo/);
 });

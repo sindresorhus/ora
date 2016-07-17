@@ -2,6 +2,7 @@
 const chalk = require('chalk');
 const cliCursor = require('cli-cursor');
 const cliSpinners = require('cli-spinners');
+const logSymbols = require('log-symbols');
 
 class Ora {
 	constructor(options) {
@@ -81,6 +82,18 @@ class Ora {
 		this.frameIndex = 0;
 		this.clear();
 		cliCursor.show();
+
+		return this;
+	}
+	succeed() {
+		return this.stopAndPersist(logSymbols.success);
+	}
+	fail() {
+		return this.stopAndPersist(logSymbols.error);
+	}
+	stopAndPersist(icon) {
+		this.stop();
+		this.stream.write(`${icon} ${this.text}\n`);
 
 		return this;
 	}
