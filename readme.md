@@ -103,6 +103,20 @@ Start the spinner. Returns the instance.
 
 Stop and clear the spinner. Returns the instance.
 
+### .succeed()
+
+Stop the spinner, change it to a green `✔` and persists the `text`. See the gif below. Returns the instance.
+
+### .failn()
+
+Stop the spinner, change it to a red `✖` and persists the `text`. See the gif below. Returns the instance.
+
+### .stopAndPersist(icon)
+
+Stop the spinner, change it to `icon` and persists the `text`. See the gif below. Returns the instance.
+
+<img src="screenshot-2.gif" width="429">
+
 #### .clear()
 
 Clear the spinner. Returns the instance.
