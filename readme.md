@@ -111,9 +111,9 @@ Stop the spinner, change it to a green `✔` and persists the `text`. See the gi
 
 Stop the spinner, change it to a red `✖` and persists the `text`. See the gif below. Returns the instance.
 
-### .stopAndPersist(icon)
+### .stopAndPersist(symbol)
 
-Stop the spinner, change it to `icon` and persists the `text`. See the gif below. Returns the instance.
+Stop the spinner, change it to `symbol` and persists the `text`. See the gif below. Returns the instance.
 
 <img src="screenshot-2.gif" width="429">
 
