@@ -142,3 +142,24 @@ test('stopAndPersist', async t => {
 
 	t.regex(output, /@ foo/);
 });
+
+test('stopAndPersist with no argument', async t => {
+	t.plan(1);
+
+	const stream = getPassThroughStream();
+
+	const spinner = new Ora({
+		stream,
+		text: 'foo',
+		color: false,
+		enabled: true
+	});
+
+	spinner.start();
+	spinner.stopAndPersist(' ');
+
+	stream.end();
+	const output = await getStream(stream);
+
+	t.regex(output, /\s foo/);
+});

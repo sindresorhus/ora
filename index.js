@@ -93,7 +93,7 @@ class Ora {
 	}
 	stopAndPersist(symbol) {
 		this.stop();
-		this.stream.write(`${symbol} ${this.text}\n`);
+		this.stream.write(`${symbol || ' '} ${this.text}\n`);
 
 		return this;
 	}
