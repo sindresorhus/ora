@@ -13,4 +13,8 @@ setTimeout(() => {
 	spinner.text = 'Loading rainbows';
 }, 1000);
 
+setTimeout(() => {
+	spinner.succeed();
+}, 2000);
+
 // $ node example.js nameOfSpinner
