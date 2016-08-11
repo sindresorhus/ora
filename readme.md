@@ -105,15 +105,15 @@ Stop and clear the spinner. Returns the instance.
 
 ### .succeed()
 
-Stop the spinner, change it to a green `✔` and persist the `text`. Returns the instance. See the below GIF below.
+Stop the spinner, change it to a green `✔` and persist the `text`. Returns the instance. See the GIF below.
 
 ### .fail()
 
-Stop the spinner, change it to a red `✖` and persist the `text`. Returns the instance. See the below GIF below.
+Stop the spinner, change it to a red `✖` and persist the `text`. Returns the instance. See the GIF below.
 
 ### .stopAndPersist([symbol])
 
-Stop the spinner, change it to `symbol` (or `' '` if `symbol` is not provided) and persist the `text`. Returns the instance. See the below GIF below.
+Stop the spinner, change it to `symbol` (or `' '` if `symbol` is not provided) and persist the `text`. Returns the instance. See the GIF below.
 
 <img src="screenshot-2.gif" width="480">
 
