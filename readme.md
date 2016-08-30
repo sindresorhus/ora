@@ -137,6 +137,9 @@ Change the text.
 
 Change the spinner color.
 
+#### .column
+
+Change column position of the spinner.
 
 ## Related
 
