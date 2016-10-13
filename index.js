@@ -99,6 +99,23 @@ class Ora {
 	}
 }
 
+function promise(action, options) {
+	if (typeof action.then === 'function') {
+		const spinner = new Ora(options);
+		spinner.start();
+		action.then(() => {
+			spinner.succeed();
+		},
+		() => {
+			spinner.fail();
+		});
+	} else {
+		throw new Error('Parameter `action` must be a Promise');
+	}
+}
+
 module.exports = function (opts) {
 	return new Ora(opts);
 };
+
+module.exports.promise = promise;

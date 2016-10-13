@@ -137,6 +137,16 @@ Change the text.
 
 Change the spinner color.
 
+### ora.promise(action, [options|text])
+
+Starts a spinner for a promise. The spinner is stopped with `succeed` if the promise resolves successfully and with `fail` of it gets rejected.
+
+##### action
+Type: `promise`<br>
+
+##### [options|text]
+
+Same as the options passed to the ora() function.
 
 ## Related
 

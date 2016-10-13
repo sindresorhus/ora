@@ -155,3 +155,46 @@ test('stopAndPersist with no argument', async t => {
 
 	t.regex(output, /\s foo/);
 });
+
+test('promise resolves', async t => {
+	t.plan(1);
+
+	const stream = getPassThroughStream();
+	const resolves = Promise.resolve(1);
+
+	Ora.promise(resolves, {
+		stream,
+		text: 'foo',
+		color: false,
+		enabled: true
+	});
+
+	await resolves;
+
+	stream.end();
+	const output = await getStream(stream);
+
+	t.regex(output, /✔|√ foo/);
+});
+
+test('promise rejects', async t => {
+	t.plan(1);
+
+	const stream = getPassThroughStream();
+	const rejects = Promise.reject(1);
+
+	Ora.promise(rejects, {
+		stream,
+		text: 'foo',
+		color: false,
+		enabled: true
+	});
+	try {
+		await rejects;
+	} catch (err) {}
+
+	stream.end();
+	const output = await getStream(stream);
+
+	t.regex(output, /✖|× foo/);
+});
