@@ -89,7 +89,7 @@ class Ora {
 		return this.stopAndPersist(logSymbols.success, text);
 	}
 	fail(text) {
-		return this.stopAndPersist(logSymbols.erro, text);
+		return this.stopAndPersist(logSymbols.error, text);
 	}
 	stopAndPersist(symbol, text) {
 		this.stop();
