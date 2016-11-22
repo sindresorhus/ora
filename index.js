@@ -69,7 +69,9 @@ class Ora {
 		cliCursor.hide();
 		this.render();
 		this.id = setInterval(this.render.bind(this), this.interval);
-		text && (this.text = text);
+		if(text) {
+			this.text = text;
+		}
 		return this;
 	}
 	stop() {
@@ -93,7 +95,9 @@ class Ora {
 	}
 	stopAndPersist(symbol, text) {
 		this.stop();
-		text && (this.text = text);
+		if(text) {
+			this.text = text;
+		}
 		this.stream.write(`${symbol || ' '} ${this.text}\n`);
 
 		return this;
