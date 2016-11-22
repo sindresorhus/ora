@@ -91,7 +91,7 @@ class Ora {
 	fail(text) {
 		return this.stopAndPersist(logSymbols.erro, text);
 	}
-	stopAndPersist(symbol) {
+	stopAndPersist(symbol, text) {
 		this.stop();
 		text && (this.text = text);
 		this.stream.write(`${symbol || ' '} ${this.text}\n`);
