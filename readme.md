@@ -137,9 +137,9 @@ Change the text.
 
 Change the spinner color.
 
-#### .column
+#### .indent
 
-Change column position of the spinner.
+Change number of spaces to indent the position of the spinner.
 
 ## Related
 

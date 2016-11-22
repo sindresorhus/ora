@@ -31,7 +31,7 @@ class Ora {
 		this.stream = this.options.stream;
 		this.id = null;
 		this.frameIndex = 0;
-		this.column = 0;
+		this.indent = this.options.indent || 0;
 		this.enabled = this.options.enabled || ((this.stream && this.stream.isTTY) && !process.env.CI);
 	}
 	frame() {
@@ -52,7 +52,7 @@ class Ora {
 		}
 
 		this.stream.clearLine();
-		this.stream.cursorTo(this.column);
+		this.stream.cursorTo(this.indent);
 
 		return this;
 	}
