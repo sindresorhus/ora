@@ -137,6 +137,9 @@ Change the text.
 
 Change the spinner color.
 
+#### .indent
+
+Change number of spaces to indent the position of the spinner.
 
 ## Related
 
