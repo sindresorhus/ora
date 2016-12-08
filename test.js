@@ -161,7 +161,6 @@ test('promise resolves', async t => {
 
 	const stream = getPassThroughStream();
 	const resolves = Promise.resolve(1);
-
 	Ora.promise(resolves, {
 		stream,
 		text: 'foo',
@@ -182,19 +181,18 @@ test('promise rejects', async t => {
 
 	const stream = getPassThroughStream();
 	const rejects = Promise.reject(1);
-
 	Ora.promise(rejects, {
 		stream,
 		text: 'foo',
 		color: false,
 		enabled: true
 	});
+
 	try {
 		await rejects;
 	} catch (err) {}
 
 	stream.end();
 	const output = await getStream(stream);
-
 	t.regex(output, /✖|× foo/);
 });
