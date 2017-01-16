@@ -31,7 +31,7 @@ class Ora {
 		this.stream = this.options.stream;
 		this.id = null;
 		this.frameIndex = 0;
-		this.enabled = this.options.enabled || ((this.stream && this.stream.isTTY) && !process.env.CI);
+		this.enabled = typeof this.options.enabled === 'boolean' ? this.options.enabled : ((this.stream && this.stream.isTTY) && !process.env.CI);
 	}
 	frame() {
 		const frames = this.spinner.frames;
