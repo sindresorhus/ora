@@ -89,7 +89,6 @@ You could for example set this to `process.stdout` instead.
 ##### enabled
 
 Type: `boolean`<br>
-Default: `false`
 
 Force enabling or disabling of the spinner. If not specified, the spinner will enable if the `stream` being run inside a TTY context and/or in a CI environment.
 
