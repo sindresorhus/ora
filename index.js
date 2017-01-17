@@ -85,15 +85,15 @@ class Ora {
 
 		return this;
 	}
-	succeed() {
-		return this.stopAndPersist(logSymbols.success);
+	succeed(text) {
+		return this.stopAndPersist(logSymbols.success, text);
 	}
-	fail() {
-		return this.stopAndPersist(logSymbols.error);
+	fail(text) {
+		return this.stopAndPersist(logSymbols.error, text);
 	}
-	stopAndPersist(symbol) {
+	stopAndPersist(symbol, text) {
 		this.stop();
-		this.stream.write(`${symbol || ' '} ${this.text}\n`);
+		this.stream.write(`${symbol || ' '} ${text || this.text}\n`);
 
 		return this;
 	}

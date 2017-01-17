@@ -102,17 +102,17 @@ Start the spinner. Returns the instance.
 
 Stop and clear the spinner. Returns the instance.
 
-### .succeed()
+### .succeed([text])
 
-Stop the spinner, change it to a green `✔` and persist the `text`. Returns the instance. See the GIF below.
+Stop the spinner, change it to a green `✔` and persist `text` (or `.text` if `text` is not provided). Returns the instance. See the GIF below.
 
-### .fail()
+### .fail([text])
 
-Stop the spinner, change it to a red `✖` and persist the `text`. Returns the instance. See the GIF below.
+Stop the spinner, change it to a red `✖` and persist `text` (or `.text` if `text` is  not provided). Returns the instance. See the GIF below.
 
-### .stopAndPersist([symbol])
+### .stopAndPersist([symbol[, text]])
 
-Stop the spinner, change it to `symbol` (or `' '` if `symbol` is not provided) and persist the `text`. Returns the instance. See the GIF below.
+Stop the spinner, change it to `symbol` (or `' '` if `symbol` is not provided) and persist `text` (or `.text` if `text` is not provided). Returns the instance. See the GIF below.
 
 <img src="screenshot-2.gif" width="480">
 
