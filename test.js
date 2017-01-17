@@ -204,7 +204,26 @@ test('stopAndPersist with new text', async t => {
 	});
 
 	spinner.start();
-	spinner.stopAndPersist('@', 'all done');
+	spinner.stopAndPersist({text: 'all done'});
+
+	stream.end();
+	const output = await getStream(stream);
+
+	t.regex(output, /\s all done/);
+});
+
+test('stopAndPersist with new symbol and text', async t => {
+	const stream = getPassThroughStream();
+
+	const spinner = new Ora({
+		stream,
+		text: 'foo',
+		color: false,
+		enabled: true
+	});
+
+	spinner.start();
+	spinner.stopAndPersist({symbol: '@', text: 'all done'});
 
 	stream.end();
 	const output = await getStream(stream);

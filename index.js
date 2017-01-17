@@ -86,14 +86,22 @@ class Ora {
 		return this;
 	}
 	succeed(text) {
-		return this.stopAndPersist(logSymbols.success, text);
+		return this.stopAndPersist({symbol: logSymbols.success, text});
 	}
 	fail(text) {
-		return this.stopAndPersist(logSymbols.error, text);
+		return this.stopAndPersist({symbol: logSymbols.error, text});
 	}
-	stopAndPersist(symbol, text) {
+	stopAndPersist(options) {
+		if (typeof options === 'string') {
+			options = {
+				symbol: options
+			};
+		}
+
+		options = options || {};
+
 		this.stop();
-		this.stream.write(`${symbol || ' '} ${text || this.text}\n`);
+		this.stream.write(`${options.symbol || ' '} ${options.text || this.text}\n`);
 
 		return this;
 	}
