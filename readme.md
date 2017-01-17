@@ -90,7 +90,7 @@ You could for example set this to `process.stdout` instead.
 
 Type: `boolean`<br>
 
-Force enabling or disabling of the spinner. If not specified, the spinner will enable if the `stream` being run inside a TTY context and/or not in a CI environment.
+Force enable/disable the spinner. If not specified, the spinner will be enabled if the `stream` is being run inside a TTY context (not spawned or piped) and/or not in a CI environment.
 
 ### Instance
 
