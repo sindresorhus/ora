@@ -61,7 +61,7 @@ class Ora {
 
 		return this;
 	}
-	start() {
+	start(text) {
 		if (!this.enabled || this.id) {
 			return this;
 		}
@@ -69,7 +69,9 @@ class Ora {
 		cliCursor.hide(this.stream);
 		this.render();
 		this.id = setInterval(this.render.bind(this), this.interval);
-
+		if(text) {
+			this.text = text;
+		}
 		return this;
 	}
 	stop() {
@@ -85,14 +87,17 @@ class Ora {
 
 		return this;
 	}
-	succeed() {
-		return this.stopAndPersist(logSymbols.success);
+	succeed(text) {
+		return this.stopAndPersist(logSymbols.success, text);
 	}
-	fail() {
-		return this.stopAndPersist(logSymbols.error);
+	fail(text) {
+		return this.stopAndPersist(logSymbols.error, text);
 	}
-	stopAndPersist(symbol) {
+	stopAndPersist(symbol, text) {
 		this.stop();
+		if(text) {
+			this.text = text;
+		}
 		this.stream.write(`${symbol || ' '} ${this.text}\n`);
 
 		return this;
