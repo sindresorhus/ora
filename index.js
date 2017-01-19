@@ -92,6 +92,8 @@ class Ora {
 		return this.stopAndPersist({symbol: logSymbols.error, text});
 	}
 	stopAndPersist(options) {
+		// Legacy argument
+		// TODO: Deprecate sometime in the future
 		if (typeof options === 'string') {
 			options = {
 				symbol: options

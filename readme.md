@@ -104,21 +104,19 @@ Stop and clear the spinner. Returns the instance.
 
 #### .succeed([text])
 
-Stop the spinner, change it to a green `✔` and persist `text` (or `.text` if `text` is not provided). Returns the instance. See the GIF below.
+Stop the spinner, change it to a green `✔` and persist the current text, or `text` if provided. Returns the instance. See the GIF below.
 
 #### .fail([text])
 
-Stop the spinner, change it to a red `✖` and persist `text` (or `.text` if `text` is  not provided). Returns the instance. See the GIF below.
+Stop the spinner, change it to a red `✖` and persist the current text, or `text` if provided. Returns the instance. See the GIF below.
 
-#### .stopAndPersist([options|symbol])
+#### .stopAndPersist([options])
 
 Stop the spinner and change the symbol or text. Returns the instance. See the GIF below.
 
-If a string is provided, it is treated as a shortcut for [`options.symbol`](#symbol).
-
 ##### options
 
-Type: `object`
+Type: `Object`
 
 ###### symbol
 
@@ -130,7 +128,7 @@ Symbol to replace the spinner with.
 ###### text
 
 Type: `string`<br>
-Default: current `text`
+Default: Current text
 
 Text to be persisted.
 
