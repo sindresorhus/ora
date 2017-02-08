@@ -117,6 +117,25 @@ test('succeed with new text', async t => {
 	t.regex(stripColor(output), /(✔|√) fooed/);
 });
 
+test('warn', async t => {
+	const stream = getPassThroughStream();
+
+	const spinner = new Ora({
+		stream,
+		text: 'foo',
+		color: false,
+		enabled: true
+	});
+
+	spinner.start();
+	spinner.warn();
+
+	stream.end();
+	const output = await getStream(stream);
+
+	t.regex(stripColor(output), /⚠ foo/);
+});
+
 test('fail', async t => {
 	const stream = getPassThroughStream();
 
