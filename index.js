@@ -26,6 +26,7 @@ class Ora {
 		}
 
 		this.text = this.options.text;
+		this.indent = this.options.indent || 0;
 		this.color = this.options.color;
 		this.interval = this.options.interval || this.spinner.interval || 100;
 		this.stream = this.options.stream;
@@ -51,7 +52,7 @@ class Ora {
 		}
 
 		this.stream.clearLine();
-		this.stream.cursorTo(0);
+		this.stream.cursorTo(this.indent);
 
 		return this;
 	}
