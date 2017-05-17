@@ -121,11 +121,6 @@ test('.stopAndPersist() - with new symbol and text', macro, spinner => {
 	spinner.stopAndPersist({symbol: '@', text: 'all done'});
 }, /@ all done/);
 
-test('spinner with default indent (0)', t => {
-	const spinner = new Ora('foo');
-	t.falsy(spinner.indent);
-});
-
 test('spinner with indent (7)', t => {
 	const spinner = new Ora({
 		text: 'bar',

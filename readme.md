@@ -71,7 +71,7 @@ Color of the spinner.
 ##### indent
 
 Type: `number`<br>
-Default: `0`<br>
+Default: `0`
 
 Indent the spinner with the given number of spaces.
 
