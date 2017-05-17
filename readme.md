@@ -68,6 +68,13 @@ Values: `black` `red` `green` `yellow` `blue` `magenta` `cyan` `white` `gray`
 
 Color of the spinner.
 
+##### indent
+
+Type: `number`<br>
+Default: `0`
+
+Indent the spinner with the given number of spaces.
+
 ##### interval
 
 Type: `number`<br>
