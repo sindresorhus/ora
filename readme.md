@@ -94,9 +94,9 @@ Force enable/disable the spinner. If not specified, the spinner will be enabled 
 
 ### Instance
 
-#### .start()
+#### .start([text])
 
-Start the spinner. Returns the instance.
+Start the spinner. Returns the instance. Set the current text if `text` is provided.
 
 #### .stop()
 

@@ -61,7 +61,11 @@ class Ora {
 
 		return this;
 	}
-	start() {
+	start(text) {
+		if (text) {
+			this.text = text;
+		}
+
 		if (!this.enabled || this.id) {
 			return this;
 		}

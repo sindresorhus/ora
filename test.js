@@ -121,6 +121,11 @@ test('.stopAndPersist() - with new symbol and text', macro, spinner => {
 	spinner.stopAndPersist({symbol: '@', text: 'all done'});
 }, /@ all done/);
 
+test('.start(text)', macro, spinner => {
+	spinner.start('Test text');
+	spinner.stopAndPersist();
+}, /Test text/);
+
 test('.promise() - resolves', async t => {
 	const stream = getPassThroughStream();
 	const output = getStream(stream);
