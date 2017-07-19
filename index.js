@@ -16,8 +16,7 @@ class Ora {
 			text: '',
 			color: 'cyan',
 			stream: process.stderr,
-			timer: false,
-			timerResolution: 's' // One of 's' or 'ms'
+			timer: false
 		}, options);
 
 		const sp = this.options.spinner;
@@ -33,6 +32,7 @@ class Ora {
 		this.stream = this.options.stream;
 		this.id = null;
 		this.frameIndex = 0;
+		this.timer = this.options.timer || false;
 		this.enabled = typeof this.options.enabled === 'boolean' ? this.options.enabled : ((this.stream && this.stream.isTTY) && !process.env.CI);
 		this.startTime = null;
 	}
@@ -40,10 +40,10 @@ class Ora {
 	timeTaken() {
 		if (this.timer && this.startTime) {
 			const durationMs = (Date.now() - this.startTime);
-			if (this.timerResolution === 's') {
-				return ' (' + parseInt(durationMs / 1000, 10) + 's)';
+			if (durationMs < 1000) {
+				return ' (' + durationMs + 'ms)';
 			}
-			return ' (' + durationMs + 'ms)';
+			return ' (' + parseInt(durationMs / 1000, 10) + 's)';
 		}
 		return '';
 	}
@@ -63,7 +63,6 @@ class Ora {
 		if (!this.enabled) {
 			return this;
 		}
-		this.startTime = Date.now();
 		this.stream.clearLine();
 		this.stream.cursorTo(0);
 

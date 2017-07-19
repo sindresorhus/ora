@@ -43,6 +43,7 @@
   "devDependencies": {
     "ava": "*",
     "get-stream": "^3.0.0",
+    "lolex": "^2.1.1",
     "strip-ansi": "^3.0.1",
     "xo": "*"
   }

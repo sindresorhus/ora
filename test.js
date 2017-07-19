@@ -2,10 +2,17 @@ import {PassThrough as PassThroughStream} from 'stream';
 import getStream from 'get-stream';
 import test from 'ava';
 import stripAnsi from 'strip-ansi';
+import lolex from 'lolex';
 import Ora from '.';
 
 const spinnerChar = process.platform === 'win32' ? '-' : '⠋';
 const noop = () => {};
+
+const now = Date.now();
+const clock = lolex.install({
+	now,
+	toFake: ['Date']
+});
 
 const getPassThroughStream = () => {
 	const stream = new PassThroughStream();
@@ -163,4 +170,20 @@ test('.promise() - rejects', async t => {
 	stream.end();
 
 	t.regex(stripAnsi(await output), /(✖|×) foo/);
+});
+
+test('.succeed() with timer', async t => {
+	const stream = getPassThroughStream();
+	const output = getStream(stream);
+	const ora = Ora;
+	const spinner = ora('foo');
+	spinner.stream = stream;
+	spinner.color = false;
+	spinner.enabled = true;
+	spinner.timer = true;
+	spinner.start();
+	clock.tick(10); // Advance time by 10ms
+	spinner.succeed('fooed');
+	stream.end();
+	t.regex(stripAnsi(await output), /⠋ foo \(0ms\)(✔|√) fooed \(10ms\)/);
 });
