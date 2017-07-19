@@ -15,7 +15,8 @@ class Ora {
 		this.options = Object.assign({
 			text: '',
 			color: 'cyan',
-			stream: process.stderr
+			stream: process.stderr,
+			timer: false
 		}, options);
 
 		const sp = this.options.spinner;
@@ -31,7 +32,20 @@ class Ora {
 		this.stream = this.options.stream;
 		this.id = null;
 		this.frameIndex = 0;
+		this.timer = this.options.timer || false;
 		this.enabled = typeof this.options.enabled === 'boolean' ? this.options.enabled : ((this.stream && this.stream.isTTY) && !process.env.CI);
+		this.startTime = null;
+	}
+
+	timeTaken() {
+		if (this.timer && this.startTime) {
+			const durationMs = (Date.now() - this.startTime);
+			if (durationMs < 1000) {
+				return ' (' + durationMs + 'ms)';
+			}
+			return ' (' + parseInt(durationMs / 1000, 10) + 's)';
+		}
+		return '';
 	}
 	frame() {
 		const frames = this.spinner.frames;
@@ -43,13 +57,12 @@ class Ora {
 
 		this.frameIndex = ++this.frameIndex % frames.length;
 
-		return frame + ' ' + this.text;
+		return frame + ' ' + this.text + this.timeTaken();
 	}
 	clear() {
 		if (!this.enabled) {
 			return this;
 		}
-
 		this.stream.clearLine();
 		this.stream.cursorTo(0);
 
@@ -65,6 +78,7 @@ class Ora {
 		if (text) {
 			this.text = text;
 		}
+		this.startTime = Date.now();
 
 		if (!this.enabled || this.id) {
 			return this;
@@ -90,16 +104,28 @@ class Ora {
 		return this;
 	}
 	succeed(text) {
-		return this.stopAndPersist({symbol: logSymbols.success, text});
+		return this.stopAndPersist({
+			symbol: logSymbols.success,
+			text
+		});
 	}
 	fail(text) {
-		return this.stopAndPersist({symbol: logSymbols.error, text});
+		return this.stopAndPersist({
+			symbol: logSymbols.error,
+			text
+		});
 	}
 	warn(text) {
-		return this.stopAndPersist({symbol: logSymbols.warning, text});
+		return this.stopAndPersist({
+			symbol: logSymbols.warning,
+			text
+		});
 	}
 	info(text) {
-		return this.stopAndPersist({symbol: logSymbols.info, text});
+		return this.stopAndPersist({
+			symbol: logSymbols.info,
+			text
+		});
 	}
 	stopAndPersist(options) {
 		// Legacy argument
@@ -113,7 +139,7 @@ class Ora {
 		options = options || {};
 
 		this.stop();
-		this.stream.write(`${options.symbol || ' '} ${options.text || this.text}\n`);
+		this.stream.write(`${options.symbol || ' '} ${options.text || this.text}${this.timeTaken()}\n`);
 
 		return this;
 	}
