@@ -57,6 +57,24 @@ test('title shortcut', async t => {
 	t.is(await output, `${spinnerChar} foo`);
 });
 
+test('progress callback', async t => {
+	const stream = getPassThroughStream();
+	const output = getStream(stream);
+	const ora = Ora;
+
+	const spinner = ora('foo');
+	spinner.stream = stream;
+	spinner.color = false;
+	spinner.enabled = true;
+	spinner.progress = () => '10/100%';
+	spinner.start();
+	spinner.stop();
+
+	stream.end();
+
+	t.is(await output, `${spinnerChar} 10/100% foo`);
+});
+
 test('`.id` is not set when created', t => {
 	const spinner = new Ora('foo');
 	t.falsy(spinner.id);
