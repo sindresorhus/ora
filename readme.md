@@ -175,6 +175,7 @@ Type: `Promise`
 
 - [cli-spinners](https://github.com/sindresorhus/cli-spinners) - Spinners for use in the terminal
 - [listr](https://github.com/SamVerschueren/listr) - Terminal task list
+- [CLISpinner](https://github.com/kiliankoe/CLISpinner) - Terminal spinner library for Swift
 
 
 ## License
