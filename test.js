@@ -121,6 +121,23 @@ test('.stopAndPersist() - with new symbol and text', macro, spinner => {
 	spinner.stopAndPersist({symbol: '@', text: 'all done'});
 }, /@ all done/);
 
+test('.stopAndPersist() - enabled false - no output', async t => {
+	const stream = getPassThroughStream();
+	const output = getStream(stream);
+
+	const spinner = new Ora({
+		stream,
+		text: 'foo',
+		color: false,
+		enabled: false
+	});
+
+	spinner.start();
+	spinner.stopAndPersist();
+	stream.end();
+	t.is(await output, '');
+});
+
 test('.start(text)', macro, spinner => {
 	spinner.start('Test text');
 	spinner.stopAndPersist();
