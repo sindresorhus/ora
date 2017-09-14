@@ -102,6 +102,10 @@ class Ora {
 		return this.stopAndPersist({symbol: logSymbols.info, text});
 	}
 	stopAndPersist(options) {
+		if (!this.enabled) {
+			return this;
+		}
+
 		// Legacy argument
 		// TODO: Deprecate sometime in the future
 		if (typeof options === 'string') {
