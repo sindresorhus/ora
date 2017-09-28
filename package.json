@@ -37,8 +37,8 @@
   "dependencies": {
     "chalk": "^2.1.0",
     "cli-cursor": "^2.1.0",
-    "cli-spinners": "^1.0.0",
-    "log-symbols": "^1.0.2"
+    "cli-spinners": "^1.0.1",
+    "log-symbols": "^2.1.0"
   },
   "devDependencies": {
     "ava": "*",
