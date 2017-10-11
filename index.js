@@ -25,6 +25,7 @@ class Ora {
 			throw new Error('Spinner must define `frames`');
 		}
 
+		this.progress = this.options.progress;
 		this.text = this.options.text;
 		this.color = this.options.color;
 		this.interval = this.options.interval || this.spinner.interval || 100;
@@ -42,6 +43,9 @@ class Ora {
 		}
 
 		this.frameIndex = ++this.frameIndex % frames.length;
+		if (this.progress) {
+			return frame + ' ' + this.progress() + ' ' + this.text;
+		}
 
 		return frame + ' ' + this.text;
 	}

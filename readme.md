@@ -96,6 +96,12 @@ Type: `boolean`
 
 Force enable/disable the spinner. If not specified, the spinner will be enabled if the `stream` is being run inside a TTY context (not spawned or piped) and/or not in a CI environment.
 
+##### progress
+
+Type: `function`
+
+A callback function that is called on every render allowing the consumer to supply any progress updates to the print out. See [progress-example.js](progress-example.js).
+
 ### Instance
 
 #### .start([text])
