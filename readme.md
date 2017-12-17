@@ -179,6 +179,7 @@ Type: `Promise`
 - [listr](https://github.com/SamVerschueren/listr) - Terminal task list
 - [CLISpinner](https://github.com/kiliankoe/CLISpinner) - Terminal spinner library for Swift
 - [halo](https://github.com/ManrajGrover/halo) - Python port
+- [spinners](https://github.com/FGRibreau/spinners) - Terminal spinners for Rust
 
 
 ## License
