@@ -2,8 +2,9 @@
 
 > Elegant terminal spinner
 
-<img src="screenshot.gif" width="629">
-
+<p align="center">
+	<img src="screenshot.svg" width="629">
+</p>
 
 ## Install
 
