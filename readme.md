@@ -3,7 +3,7 @@
 > Elegant terminal spinner
 
 <p align="center">
-	<img src="screenshot.svg" width="629">
+	<img src="https://cdn.rawgit.com/marionebl/ora/36e9f13de384add7b1661b72954e58bff818808d/screenshot.svg" width="629">
 </p>
 
 ## Install
