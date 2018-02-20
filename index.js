@@ -50,7 +50,7 @@ class Ora {
 		this[TEXT] = value;
 		const columns = this.stream.columns || 80;
 		this.lineCount = stripAnsi('--' + value).split('\n').reduce((count, line) => {
-			return count + Math.ceil(wcwidth(line) / columns);
+			return count + Math.max(1, Math.ceil(wcwidth(line) / columns));
 		}, 0);
 	}
 

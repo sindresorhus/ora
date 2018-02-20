@@ -210,14 +210,14 @@ test('erases wrapped lines', t => {
 	t.is(clearedLines, 0);
 	t.is(cursorAtRow, 0);
 
-	spinner.text = 'foo\nbar';
+	spinner.text = 'foo\n\nbar';
 	spinner.render();
-	t.is(clearedLines, 1);
+	t.is(clearedLines, 1); // Cleared 'foo'
 	t.is(cursorAtRow, 0);
 
 	spinner.render();
-	t.is(clearedLines, 3);
-	t.is(cursorAtRow, -1);
+	t.is(clearedLines, 4); // Cleared 'foo\n\nbar'
+	t.is(cursorAtRow, -2);
 
 	spinner.clear();
 	reset();
