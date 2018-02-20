@@ -33,6 +33,7 @@ class Ora {
 		this.frameIndex = 0;
 		this.enabled = typeof this.options.enabled === 'boolean' ? this.options.enabled : ((this.stream && this.stream.isTTY) && !process.env.CI);
 	}
+
 	frame() {
 		const frames = this.spinner.frames;
 		let frame = frames[this.frameIndex];
@@ -45,6 +46,7 @@ class Ora {
 
 		return frame + ' ' + this.text;
 	}
+
 	clear() {
 		if (!this.enabled) {
 			return this;
@@ -55,12 +57,14 @@ class Ora {
 
 		return this;
 	}
+
 	render() {
 		this.clear();
 		this.stream.write(this.frame());
 
 		return this;
 	}
+
 	start(text) {
 		if (text) {
 			this.text = text;
@@ -76,6 +80,7 @@ class Ora {
 
 		return this;
 	}
+
 	stop() {
 		if (!this.enabled) {
 			return this;
@@ -89,18 +94,23 @@ class Ora {
 
 		return this;
 	}
+
 	succeed(text) {
 		return this.stopAndPersist({symbol: logSymbols.success, text});
 	}
+
 	fail(text) {
 		return this.stopAndPersist({symbol: logSymbols.error, text});
 	}
+
 	warn(text) {
 		return this.stopAndPersist({symbol: logSymbols.warning, text});
 	}
+
 	info(text) {
 		return this.stopAndPersist({symbol: logSymbols.info, text});
 	}
+
 	stopAndPersist(options) {
 		if (!this.enabled) {
 			return this;
