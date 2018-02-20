@@ -72,6 +72,10 @@ Values: `black` `red` `green` `yellow` `blue` `magenta` `cyan` `white` `gray`
 
 Color of the spinner.
 
+##### hideCursor
+
+Set to `false` to stop Ora from hiding the cursor.
+
 ##### interval
 
 Type: `number`<br>
