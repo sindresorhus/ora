@@ -79,7 +79,7 @@ class Ora {
 			this.stream.clearLine();
 			this.stream.cursorTo(0);
 		}
-		this.linesToClear = -1;
+		this.linesToClear = 0;
 
 		return this;
 	}
