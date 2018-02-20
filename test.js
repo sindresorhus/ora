@@ -11,6 +11,7 @@ const getPassThroughStream = () => {
 	const stream = new PassThroughStream();
 	stream.clearLine = noop;
 	stream.cursorTo = noop;
+	stream.moveCursor = noop;
 	return stream;
 };
 
@@ -180,4 +181,70 @@ test('.promise() - rejects', async t => {
 	stream.end();
 
 	t.regex(stripAnsi(await output), /(✖|×) foo/);
+});
+
+test('erases wrapped lines', t => {
+	const stream = getPassThroughStream();
+	stream.columns = 40;
+	let clearedLines = 0;
+	let cursorAtRow = 0;
+	stream.clearLine = () => {
+		clearedLines++;
+	};
+	stream.moveCursor = (dx, dy) => {
+		cursorAtRow += dy;
+	};
+	const reset = () => {
+		clearedLines = 0;
+		cursorAtRow = 0;
+	};
+
+	const spinner = new Ora({
+		stream,
+		text: 'foo',
+		color: false,
+		enabled: true
+	});
+
+	spinner.render();
+	t.is(clearedLines, 0);
+	t.is(cursorAtRow, 0);
+
+	spinner.text = 'foo\nbar';
+	spinner.render();
+	t.is(clearedLines, 1);
+	t.is(cursorAtRow, 0);
+
+	spinner.render();
+	t.is(clearedLines, 3);
+	t.is(cursorAtRow, -1);
+
+	spinner.clear();
+	reset();
+	spinner.text = '0'.repeat(stream.columns + 10);
+	spinner.render();
+	spinner.render();
+	t.is(clearedLines, 2);
+	t.is(cursorAtRow, -1);
+
+	spinner.clear();
+	reset();
+	// Unicorns take up two cells, so this creates 3 rows of text not two
+	spinner.text = '🦄'.repeat(stream.columns + 10);
+	spinner.render();
+	spinner.render();
+	t.is(clearedLines, 3);
+	t.is(cursorAtRow, -2);
+
+	spinner.clear();
+	reset();
+	// Unicorns take up two cells. Remove the spinner and space and fill two rows,
+	// then force a linebreak and write the third row.
+	spinner.text = '🦄'.repeat(stream.columns - 2) + '\nfoo';
+	spinner.render();
+	spinner.render();
+	t.is(clearedLines, 3);
+	t.is(cursorAtRow, -2);
+
+	spinner.stop();
 });

@@ -3,6 +3,10 @@ const chalk = require('chalk');
 const cliCursor = require('cli-cursor');
 const cliSpinners = require('cli-spinners');
 const logSymbols = require('log-symbols');
+const stripAnsi = require('strip-ansi');
+const wcwidth = require('wcwidth');
+
+const TEXT = Symbol('text');
 
 class Ora {
 	constructor(options) {
@@ -25,13 +29,28 @@ class Ora {
 			throw new Error('Spinner must define `frames`');
 		}
 
-		this.text = this.options.text;
 		this.color = this.options.color;
 		this.interval = this.options.interval || this.spinner.interval || 100;
 		this.stream = this.options.stream;
 		this.id = null;
 		this.frameIndex = 0;
 		this.enabled = typeof this.options.enabled === 'boolean' ? this.options.enabled : ((this.stream && this.stream.isTTY) && !process.env.CI);
+
+		// Set *after* this.stream
+		this.text = this.options.text;
+		this.linesToClear = 0;
+	}
+
+	get text() {
+		return this[TEXT];
+	}
+
+	set text(value) {
+		this[TEXT] = value;
+		const columns = this.stream.columns || 80;
+		this.lineCount = stripAnsi('--' + value).split('\n').reduce((count, line) => {
+			return count + Math.ceil(wcwidth(line) / columns);
+		}, 0);
 	}
 
 	frame() {
@@ -52,8 +71,14 @@ class Ora {
 			return this;
 		}
 
-		this.stream.clearLine();
-		this.stream.cursorTo(0);
+		for (let i = 0; i < this.linesToClear; i++) {
+			if (i > 0) {
+				this.stream.moveCursor(0, -1);
+			}
+			this.stream.clearLine();
+			this.stream.cursorTo(0);
+		}
+		this.linesToClear = -1;
 
 		return this;
 	}
@@ -61,6 +86,7 @@ class Ora {
 	render() {
 		this.clear();
 		this.stream.write(this.frame());
+		this.linesToClear = this.lineCount;
 
 		return this;
 	}
