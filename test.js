@@ -105,6 +105,10 @@ test('.info()', macro, spinner => {
 	spinner.info();
 }, /(ℹ|i) foo/);
 
+test('.interrupt()', macro, spinner => {
+	spinner.interrupt('breaker');
+}, /breaker\n.\sfoo$/);
+
 test('.stopAndPersist()', macro, spinner => {
 	spinner.stopAndPersist('@');
 }, /@ foo/);

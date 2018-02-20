@@ -57,7 +57,13 @@ class Ora {
 	}
 	render() {
 		this.clear();
-		this.stream.write(this.frame());
+
+		const frame = this.frame();
+
+		this.stream.write(frame);
+		if (this.lastFrame !== frame) {
+			this.lastFrame = frame;
+		}
 
 		return this;
 	}
@@ -100,6 +106,12 @@ class Ora {
 	}
 	info(text) {
 		return this.stopAndPersist({symbol: logSymbols.info, text});
+	}
+	interrupt(text) {
+		this.stream.clearLine();
+		this.stream.cursorTo(0);
+		this.stream.write(text + '\n');
+		this.stream.write(this.lastFrame);
 	}
 	stopAndPersist(options) {
 		if (!this.enabled) {
