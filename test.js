@@ -51,6 +51,7 @@ test('title shortcut', async t => {
 	spinner.color = false;
 	spinner.enabled = true;
 	spinner.start();
+	t.true(spinner.isSpinning);
 	spinner.stop();
 
 	stream.end();
@@ -61,6 +62,7 @@ test('title shortcut', async t => {
 test('`.id` is not set when created', t => {
 	const spinner = new Ora('foo');
 	t.falsy(spinner.id);
+	t.false(spinner.isSpinning);
 });
 
 test('ignore consecutive calls to `.start()`', t => {

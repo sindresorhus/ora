@@ -46,6 +46,10 @@ class Ora {
 		return this[TEXT];
 	}
 
+	get isSpinning() {
+		return this.id !== null;
+	}
+
 	set text(value) {
 		this[TEXT] = value;
 		const columns = this.stream.columns || 80;
@@ -97,7 +101,7 @@ class Ora {
 			this.text = text;
 		}
 
-		if (!this.enabled || this.id) {
+		if (!this.enabled || this.isSpinning) {
 			return this;
 		}
 
