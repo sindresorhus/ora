@@ -191,6 +191,7 @@ Type: `Promise`
 - [CLISpinner](https://github.com/kiliankoe/CLISpinner) - Terminal spinner library for Swift
 - [halo](https://github.com/ManrajGrover/halo) - Python port
 - [spinners](https://github.com/FGRibreau/spinners) - Terminal spinners for Rust
+- [marquee style spinner](https://github.com/joeycozza/marquee-ora) - Utility to make a scrolling marquee spinner compatible with ora
 
 
 ## License
