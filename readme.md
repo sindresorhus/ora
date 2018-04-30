@@ -133,7 +133,7 @@ Stop the spinner, change it to a blue `ℹ` and persist the current text, or `te
 
 #### .isSpinning
 
-Returns a boolean that describes whether the instance is currently spinning.
+A boolean of whether the instance is currently spinning.
 
 #### .stopAndPersist([options])
 
