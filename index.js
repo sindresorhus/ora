@@ -102,7 +102,7 @@ class Ora {
 		}
 
 		if (!this.enabled || this.isSpinning) {
-			console.log(`${logSymbols.info} ${this.text}\n`);
+			console.log(`${logSymbols.info} ${this.text}`);
 			return this;
 		}
 
@@ -150,7 +150,7 @@ class Ora {
 	stopAndPersist(options) {
 		options = options || {};
 		if (!this.enabled) {
-			console.log(`${options.symbol || ' '} ${options.text || this.text}\n`);
+			console.log(`${options.symbol || ' '} ${options.text || this.text}`);
 			return this;
 		}
 
