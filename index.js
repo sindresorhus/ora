@@ -102,7 +102,7 @@ class Ora {
 		}
 
 		if (!this.enabled || this.isSpinning) {
-			console.log(`${logSymbols.info} ${options.text || this.text}\n`);
+			console.log(`${logSymbols.info} ${this.text}\n`);
 			return this;
 		}
 
