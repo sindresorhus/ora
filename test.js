@@ -68,7 +68,7 @@ test('`.id` is not set when created', t => {
 test('ignore consecutive calls to `.start()`', t => {
 	const spinner = new Ora('foo');
 	spinner.start();
-	const id = spinner.id;
+	const {id} = spinner;
 	spinner.start();
 	t.is(id, spinner.id);
 });
