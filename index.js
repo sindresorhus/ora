@@ -149,6 +149,12 @@ class Ora {
 
 	stopAndPersist(options) {
 		options = options || {};
+		
+		// TODO: Remove in the next major version
+		if (typeof options === 'string') {
+			throw new TypeError('This argument now accepts an options object, not a string');
+		}
+
 		if (!this.enabled) {
 			console.log(`${options.symbol || ' '} ${options.text || this.text}`);
 			return this;
