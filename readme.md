@@ -81,7 +81,8 @@ Color of the spinner.
 Type: `boolean`<br>
 Default: `true`
 
-Set to `false` to stop Ora from hiding the cursor.
+Set to `false` to stop Ora from hiding the cursor.<br>
+Set to `false` if you run into issues killing the process with CTRL+C (SIGINT).
 
 ##### interval
 
