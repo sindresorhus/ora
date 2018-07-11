@@ -77,6 +77,7 @@ class Ora {
 		}
 
 		for (let i = 0; i < this.linesToClear; i++) {
+			if ( ! this.stream.isTTY) continue;
 			if (i > 0) {
 				this.stream.moveCursor(0, -1);
 			}
