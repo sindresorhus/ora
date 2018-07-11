@@ -72,12 +72,11 @@ class Ora {
 	}
 
 	clear() {
-		if (!this.enabled) {
+		if (!this.enabled || !this.stream.isTTY) {
 			return this;
 		}
 
 		for (let i = 0; i < this.linesToClear; i++) {
-			if ( ! this.stream.isTTY) continue;
 			if (i > 0) {
 				this.stream.moveCursor(0, -1);
 			}
