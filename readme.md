@@ -194,6 +194,7 @@ Type: `Promise`
 
 - [cli-spinners](https://github.com/sindresorhus/cli-spinners) - Spinners for use in the terminal
 - [listr](https://github.com/SamVerschueren/listr) - Terminal task list
+- [runspin](https://github.com/runvnc/runspin) - Simple terminal execs with await showing spinners
 - [CLISpinner](https://github.com/kiliankoe/CLISpinner) - Terminal spinner library for Swift
 - [halo](https://github.com/ManrajGrover/halo) - Python port
 - [spinners](https://github.com/FGRibreau/spinners) - Terminal spinners for Rust
