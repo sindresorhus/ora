@@ -59,7 +59,7 @@ class Ora {
 	}
 
 	frame() {
-		const frames = this.spinner.frames;
+		const {frames} = this.spinner;
 		let frame = frames[this.frameIndex];
 
 		if (this.color) {
