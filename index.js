@@ -5,6 +5,7 @@ const cliSpinners = require('cli-spinners');
 const logSymbols = require('log-symbols');
 const stripAnsi = require('strip-ansi');
 const wcwidth = require('wcwidth');
+const isCi = require('is-ci');
 
 const TEXT = Symbol('text');
 
@@ -35,7 +36,7 @@ class Ora {
 		this.stream = this.options.stream;
 		this.id = null;
 		this.frameIndex = 0;
-		this.isEnabled = typeof this.options.isEnabled === 'boolean' ? this.options.isEnabled : ((this.stream && this.stream.isTTY) && !process.env.CI);
+		this.isEnabled = typeof this.options.isEnabled === 'boolean' ? this.options.isEnabled : ((this.stream && this.stream.isTTY) && !isCi);
 
 		// Set *after* `this.stream`
 		this.text = this.options.text;
