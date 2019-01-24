@@ -40,6 +40,7 @@ class Ora {
 		// Set *after* `this.stream`
 		this.text = this.options.text;
 		this.linesToClear = 0;
+		this.indent = this.options.indent || 0;
 	}
 
 	get text() {
@@ -81,7 +82,7 @@ class Ora {
 				this.stream.moveCursor(0, -1);
 			}
 			this.stream.clearLine();
-			this.stream.cursorTo(0);
+			this.stream.cursorTo(this.indent);
 		}
 		this.linesToClear = 0;
 
