@@ -22,12 +22,7 @@ class Ora {
 			stream: process.stderr
 		}, options);
 
-		const sp = this.options.spinner;
-		this.spinner = typeof sp === 'object' ? sp : (process.platform === 'win32' ? cliSpinners.line : (cliSpinners[sp] || cliSpinners.dots)); // eslint-disable-line no-nested-ternary
-
-		if (this.spinner.frames === undefined) {
-			throw new Error('Spinner must define `frames`');
-		}
+		this.spinner = this.options.spinner;
 
 		this.color = this.options.color;
 		this.hideCursor = this.options.hideCursor !== false;
@@ -40,6 +35,19 @@ class Ora {
 		// Set *after* `this.stream`
 		this.text = this.options.text;
 		this.linesToClear = 0;
+	}
+
+	get spinner() {
+		return this._spinner;
+	}
+
+	set spinner(sp) {
+		this.frameIndex = 0;
+		this._spinner = typeof sp === 'object' ? sp : (process.platform === 'win32' ? cliSpinners.line : (cliSpinners[sp] || cliSpinners.dots)); // eslint-disable-line no-nested-ternary
+
+		if (this.spinner.frames === undefined) {
+			throw new Error('Spinner must define `frames`');
+		}
 	}
 
 	get text() {
