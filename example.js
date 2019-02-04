@@ -20,7 +20,13 @@ setTimeout(() => {
 }, 2000);
 
 setTimeout(() => {
-	spinner.succeed();
+	spinner.indent = 2;
+	spinner.spinner = 'moon';
+	spinner.text = 'Loading with different spinners';
 }, 3000);
+
+setTimeout(() => {
+	spinner.succeed();
+}, 4000);
 
 // $ node example.js nameOfSpinner
