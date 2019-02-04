@@ -183,7 +183,7 @@ Change the spinner color.
 
 #### .spinner
 
-Change the spinner. Support changing while `ora` is running.
+Change the spinner.
 
 ### ora.promise(action, [options|text])
 
