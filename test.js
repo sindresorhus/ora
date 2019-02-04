@@ -236,7 +236,7 @@ test('erases wrapped lines', t => {
 	spinner.stop();
 });
 
-test('indent', t => {
+test('indent option', t => {
 	const stream = getPassThroughStream();
 	stream.isTTY = true;
 	let cursorAtRow = 0;
@@ -258,7 +258,7 @@ test('indent', t => {
 	spinner.stop();
 });
 
-test('indent throws', t => {
+test('indent option throws', t => {
 	const stream = getPassThroughStream();
 
 	const spinner = new Ora({
@@ -270,5 +270,5 @@ test('indent throws', t => {
 
 	t.throws(() => {
 		spinner.indent = -1;
-	}, 'The given indent must be an integer from 0 and up');
+	}, 'The `indent` option must be an integer from 0 and up');
 });
