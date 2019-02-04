@@ -258,12 +258,12 @@ test('reset frameIndex when setting new spinner', async t => {
 	t.regex(stripAnsi(await output), /foo baz/);
 });
 
-test('throw when incorect spinner', t => {
+test('throw when incorrect spinner', t => {
 	const ora = new Ora();
 
 	t.throws(() => {
 		ora.spinner = 'random-string-12345';
-	});
+	}, /no built-in spinner/);
 });
 
 test('indent option', t => {
