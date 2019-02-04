@@ -181,6 +181,10 @@ Change the text.
 
 Change the spinner color.
 
+#### .spinner
+
+Change the spinner. Support changing while `ora` is running.
+
 ### ora.promise(action, [options|text])
 
 Starts a spinner for a promise. The spinner is stopped with `.succeed()` if the promise fulfills or with `.fail()` if it rejects. Returns the spinner instance.
