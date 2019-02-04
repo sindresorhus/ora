@@ -40,7 +40,7 @@ class Ora {
 		return this._spinner;
 	}
 
-	set spinner(spinner = cliSpinners.dots) {
+	set spinner(spinner) {
 		this.frameIndex = 0;
 
 		if (typeof spinner === 'object') {
@@ -51,6 +51,9 @@ class Ora {
 			this._spinner = spinner;
 		} else if (process.platform === 'win32') {
 			this._spinner = cliSpinners.line;
+		} else if (spinner === undefined) {
+			// Set default spinner
+			this._spinner = cliSpinners.dots;
 		} else if (cliSpinners[spinner]) {
 			this._spinner = cliSpinners[spinner];
 		} else {
