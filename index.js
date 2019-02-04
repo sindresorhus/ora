@@ -29,7 +29,6 @@ class Ora {
 		this.interval = this.options.interval || this.spinner.interval || 100;
 		this.stream = this.options.stream;
 		this.id = null;
-		this.frameIndex = 0;
 		this.isEnabled = typeof this.options.isEnabled === 'boolean' ? this.options.isEnabled : ((this.stream && this.stream.isTTY) && !process.env.CI);
 
 		// Set *after* `this.stream`
@@ -41,12 +40,22 @@ class Ora {
 		return this._spinner;
 	}
 
-	set spinner(sp) {
+	set spinner(spinner = cliSpinners.dots) {
 		this.frameIndex = 0;
-		this._spinner = typeof sp === 'object' ? sp : (process.platform === 'win32' ? cliSpinners.line : (cliSpinners[sp] || cliSpinners.dots)); // eslint-disable-line no-nested-ternary
 
-		if (this.spinner.frames === undefined) {
-			throw new Error('Spinner must define `frames`');
+		if (typeof spinner === 'object') {
+			if (spinner.frames === undefined) {
+				throw new Error('The given spinner must have a `frames` property');
+			}
+
+			this._spinner = spinner;
+		} else if (process.platform === 'win32') {
+			this._spinner = cliSpinners.line;
+		} else if (cliSpinners[spinner]) {
+			this._spinner = cliSpinners[spinner];
+		} else {
+			throw new Error(`The given spinner "${spinner}" doesn't exist in cli-spinners. ` +
+				'See https://github.com/sindresorhus/cli-spinners/blob/master/spinners.json for full list.');
 		}
 	}
 
