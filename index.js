@@ -40,7 +40,18 @@ class Ora {
 		// Set *after* `this.stream`
 		this.text = this.options.text;
 		this.linesToClear = 0;
-		this.indent = this.options.indent || 0;
+		this.indent = this.options.indent;
+	}
+
+	get indent() {
+		return this._indent;
+	}
+
+	set indent(indent = 0) {
+		if (!Number.isInteger(indent) || indent < 0) {
+			throw new Error('The given indent must be an integer from 0 and up');
+		}
+		this._indent = indent;
 	}
 
 	get text() {

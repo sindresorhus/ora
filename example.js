@@ -14,7 +14,13 @@ setTimeout(() => {
 }, 1000);
 
 setTimeout(() => {
-	spinner.succeed();
+	spinner.color = 'green';
+	spinner.indent = 2;
+	spinner.text = 'Loading with indent';
 }, 2000);
+
+setTimeout(() => {
+	spinner.succeed();
+}, 3000);
 
 // $ node example.js nameOfSpinner
