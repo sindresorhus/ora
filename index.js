@@ -54,7 +54,7 @@ class Ora {
 		} else if (cliSpinners[spinner]) {
 			this._spinner = cliSpinners[spinner];
 		} else {
-			throw new Error(`There is no built-in spinner named '${spinner}'. See https://github.com/sindresorhus/cli-spinners/blob/master/spinners.json for a full list.');
+			throw new Error(`There is no built-in spinner named '${spinner}'. See https://github.com/sindresorhus/cli-spinners/blob/master/spinners.json for a full list.`);
 		}
 	}
 
