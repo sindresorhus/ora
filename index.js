@@ -34,6 +34,19 @@ class Ora {
 		// Set *after* `this.stream`
 		this.text = this.options.text;
 		this.linesToClear = 0;
+		this.indent = this.options.indent;
+	}
+
+	get indent() {
+		return this._indent;
+	}
+
+	set indent(indent = 0) {
+		if (!(indent >= 0 && Number.isInteger(indent))) {
+			throw new Error('The `indent` option must be an integer from 0 and up');
+		}
+
+		this._indent = indent;
 	}
 
 	get spinner() {
@@ -100,7 +113,7 @@ class Ora {
 				this.stream.moveCursor(0, -1);
 			}
 			this.stream.clearLine();
-			this.stream.cursorTo(0);
+			this.stream.cursorTo(this.indent);
 		}
 		this.linesToClear = 0;
 

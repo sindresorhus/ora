@@ -81,6 +81,13 @@ Default: `true`
 
 Set to `false` to stop Ora from hiding the cursor.
 
+##### indent
+
+Type: `number`<br>
+Default: `0`
+
+Indent the spinner with the given number of spaces.
+
 ##### interval
 
 Type: `number`<br>
@@ -184,6 +191,10 @@ Change the spinner color.
 #### .spinner
 
 Change the spinner.
+
+#### .indent
+
+Change the spinner indent.
 
 ### ora.promise(action, [options|text])
 
