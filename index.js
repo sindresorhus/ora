@@ -48,9 +48,10 @@ class Ora {
 	}
 
 	set indent(indent = 0) {
-		if (!Number.isInteger(indent) || indent < 0) {
-			throw new Error('The given indent must be an integer from 0 and up');
+		if (!(indent >= 0 && Number.isInteger(indent))) {
+			throw new Error('The `indent` option must be an integer from 0 and up');
 		}
+
 		this._indent = indent;
 	}
 
