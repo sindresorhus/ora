@@ -261,12 +261,9 @@ test('reset frameIndex when setting new spinner', async t => {
 test('throw when incorect spinner', t => {
 	const ora = new Ora();
 
-	try {
+	t.throws(() => {
 		ora.spinner = 'random-string-12345';
-		t.fail();
-	} catch (error) {
-		t.pass(error.message);
-	}
+	});
 });
 
 test('indent option', t => {
