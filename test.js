@@ -257,3 +257,14 @@ test('reset frameIndex when setting new spinner', async t => {
 	t.is(spinner.frameIndex, 0);
 	t.regex(stripAnsi(await output), /foo baz/);
 });
+
+test('throw when incorect spinner', t => {
+	const ora = new Ora();
+
+	try {
+		ora.spinner = 'random-string-12345';
+		t.fail();
+	} catch (error) {
+		t.pass(error.message);
+	}
+});
