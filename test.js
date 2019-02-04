@@ -257,3 +257,18 @@ test('indent', t => {
 	t.is(cursorAtRow, 7);
 	spinner.stop();
 });
+
+test('indent throws', t => {
+	const stream = getPassThroughStream();
+
+	const spinner = new Ora({
+		stream,
+		text: 'foo',
+		color: false,
+		isEnabled: true
+	});
+
+	t.throws(() => {
+		spinner.indent = -1;
+	}, 'The given indent must be an integer from 0 and up');
+});
