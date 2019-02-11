@@ -20,7 +20,7 @@ setTimeout(() => {
 }, 2000);
 
 setTimeout(() => {
-	spinner.indent = 2;
+	spinner.indent = 0;
 	spinner.spinner = 'moon';
 	spinner.text = 'Loading with different spinners';
 }, 3000);
