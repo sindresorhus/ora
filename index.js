@@ -194,9 +194,12 @@ class Ora {
 	}
 }
 
-module.exports = function (opts) {
+const oraFactory = function (opts) {
 	return new Ora(opts);
 };
+
+module.exports = oraFactory;
+module.exports.default = oraFactory;
 
 module.exports.promise = (action, options) => {
 	if (typeof action.then !== 'function') {
