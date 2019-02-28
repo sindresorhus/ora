@@ -1,5 +1,4 @@
 /// <reference types="node"/>
-
 import {Writable} from 'stream';
 
 export type SpinnerName =
