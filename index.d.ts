@@ -101,7 +101,7 @@ export default function ora(options?: Options | string): Ora;
  * @returns The spinner instance.
  */
 export function promise(
-	action: PromiseLike<any>,
+	action: PromiseLike<unknown>,
 	options?: Options | string
 ): Ora;
 
