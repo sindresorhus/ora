@@ -215,6 +215,7 @@ Type: `Promise`
 - [marquee-ora](https://github.com/joeycozza/marquee-ora) - Scrolling marquee spinner for Ora
 - [briandowns/spinner](https://github.com/briandowns/spinner) - Terminal spinner/progress indicator for Go
 - [tj/go-spin](https://github.com/tj/go-spin) - Terminal spinner package for Go
+- [gauge](https://github.com/npm/gauge) - Terminal progress bar with spinner
 
 
 ## License
