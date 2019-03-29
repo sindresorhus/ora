@@ -50,6 +50,12 @@ Type: `string`
 
 Text to display after the spinner.
 
+##### prefixText
+
+Type: `string`
+
+Text to display before the spinner.
+
 ##### spinner
 
 Type: `string` `Object`<br>
@@ -166,7 +172,15 @@ Default: Current text
 
 Text to be persisted.
 
+###### prefixText
+
+Type: `string`<br>
+Default: Current prefixText
+
+Text to be persisted before symbol.
+
 <img src="screenshot-2.gif" width="480">
+
 
 #### .clear()
 

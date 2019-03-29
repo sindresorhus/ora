@@ -235,6 +235,15 @@ test('erases wrapped lines', t => {
 	t.is(clearedLines, 3);
 	t.is(cursorAtRow, -2);
 
+	spinner.clear();
+	reset();
+	spinner.prefixText = 'foo\n';
+	spinner.text = '\nbar';
+	spinner.render();
+	spinner.render();
+	t.is(clearedLines, 3); // Cleared 'foo\n\nbar'
+	t.is(cursorAtRow, -2);
+
 	spinner.stop();
 });
 
@@ -304,3 +313,12 @@ test('indent option throws', t => {
 		spinner.indent = -1;
 	}, 'The `indent` option must be an integer from 0 and up');
 });
+
+test('.stopAndPersist() with prefixText', macro, spinner => {
+	spinner.stopAndPersist({symbol: '@', text: 'foo'});
+}, /bar @ foo/, {prefixText: 'bar'});
+
+test('.stopAndPersist() with manual prefixText', macro, spinner => {
+	spinner.stopAndPersist({symbol: '@', prefixText: 'baz', text: 'foo'});
+}, /baz @ foo/, {prefixText: 'bar'});
+

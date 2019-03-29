@@ -7,6 +7,7 @@ const stripAnsi = require('strip-ansi');
 const wcwidth = require('wcwidth');
 
 const TEXT = Symbol('text');
+const PREFIX_TEXT = Symbol('prefixText');
 
 class Ora {
 	constructor(options) {
@@ -33,6 +34,7 @@ class Ora {
 
 		// Set *after* `this.stream`
 		this.text = this.options.text;
+		this.prefixText = this.options.prefixText;
 		this.linesToClear = 0;
 		this.indent = this.options.indent;
 	}
@@ -78,16 +80,30 @@ class Ora {
 		return this[TEXT];
 	}
 
+	get prefixText() {
+		return this[PREFIX_TEXT];
+	}
+
 	get isSpinning() {
 		return this.id !== null;
 	}
 
-	set text(value) {
-		this[TEXT] = value;
+	updateLineCount() {
 		const columns = this.stream.columns || 80;
-		this.lineCount = stripAnsi('--' + value).split('\n').reduce((count, line) => {
+		const fullPrefixText = (typeof this[PREFIX_TEXT] === 'string') ? this[PREFIX_TEXT] + '-' : '';
+		this.lineCount = stripAnsi(fullPrefixText + '--' + this[TEXT]).split('\n').reduce((count, line) => {
 			return count + Math.max(1, Math.ceil(wcwidth(line) / columns));
 		}, 0);
+	}
+
+	set text(value) {
+		this[TEXT] = value;
+		this.updateLineCount();
+	}
+
+	set prefixText(value) {
+		this[PREFIX_TEXT] = value;
+		this.updateLineCount();
 	}
 
 	frame() {
@@ -99,8 +115,10 @@ class Ora {
 		}
 
 		this.frameIndex = ++this.frameIndex % frames.length;
+		const fullPrefixText = typeof this.prefixText === 'string' ? this.prefixText + ' ' : '';
+		const fullText = typeof this.text === 'string' ? ' ' + this.text : '';
 
-		return frame + ' ' + this.text;
+		return fullPrefixText + frame + fullText;
 	}
 
 	clear() {
@@ -187,8 +205,13 @@ class Ora {
 	}
 
 	stopAndPersist(options = {}) {
+		const prefixText = options.prefixText || this.prefixText;
+		const fullPrefixText = (typeof prefixText === 'string') ? prefixText + ' ' : '';
+		const text = options.text || this.text;
+		const fullText = (typeof text === 'string') ? ' ' + text : '';
+
 		this.stop();
-		this.stream.write(`${options.symbol || ' '} ${options.text || this.text}\n`);
+		this.stream.write(`${fullPrefixText}${options.symbol || ' '}${fullText}n`);
 
 		return this;
 	}

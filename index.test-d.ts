@@ -4,6 +4,7 @@ import ora, {promise} from '.';
 
 const spinner = ora('Loading unicorns');
 ora({text: 'Loading unicorns'});
+ora({prefixText: 'Loading unicorns'});
 ora({spinner: 'squish'});
 ora({spinner: {frames: ['-', '+', '-']}});
 ora({spinner: {interval: 80, frames: ['-', '+', '-']}});
@@ -34,6 +35,7 @@ spinner.info('info foo');
 spinner.stopAndPersist();
 spinner.stopAndPersist({text: 'all done'});
 spinner.stopAndPersist({symbol: '@', text: 'all done'});
+spinner.stopAndPersist({prefixText: 'all done'});
 spinner.clear();
 spinner.render();
 spinner.frame();
