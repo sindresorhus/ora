@@ -25,6 +25,14 @@ export type Options = Readonly<{
 	text?: string;
 
 	/**
+	 * Formatting to display spinner and text.
+	 *
+	 * @default '<symbol> <text>'
+	 *
+	 */
+	format?: string;
+
+	/**
 	 * Name of one of the provided spinners. See [`example.js`](https://github.com/BendingBender/ora/blob/master/example.js) in this repo if you want to test out different spinners. On Windows, it will always use the line spinner as the Windows command-line doesn't have proper Unicode support.
 	 *
 	 * @default 'dots'
@@ -131,6 +139,14 @@ export interface Ora {
 	text: string;
 
 	/**
+	 * Formatting to display spinner and text.
+	 *
+	 * @default '<symbol> <text>'
+	 *
+	 */
+	format?: string;
+
+	/**
 	 * Change the spinner color.
 	 */
 	color: Color;
@@ -219,4 +235,11 @@ export interface Ora {
 	 * @returns The spinner instance.
 	 */
 	frame(): Ora;
+
+	/**
+	 * Get a new formatted string.
+	 *
+	 * @returns Formatted string.
+	 */
+	parser(symbol?: string, text?: string): Ora;
 }

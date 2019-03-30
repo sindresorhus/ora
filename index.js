@@ -19,7 +19,8 @@ class Ora {
 		this.options = Object.assign({
 			text: '',
 			color: 'cyan',
-			stream: process.stderr
+			stream: process.stderr,
+			format: '<symbol> <text>'
 		}, options);
 
 		this.spinner = this.options.spinner;
@@ -28,6 +29,7 @@ class Ora {
 		this.hideCursor = this.options.hideCursor !== false;
 		this.interval = this.options.interval || this.spinner.interval || 100;
 		this.stream = this.options.stream;
+		this.format = this.options.format;
 		this.id = null;
 		this.isEnabled = typeof this.options.isEnabled === 'boolean' ? this.options.isEnabled : ((this.stream && this.stream.isTTY) && !process.env.CI);
 
@@ -90,6 +92,10 @@ class Ora {
 		}, 0);
 	}
 
+	parser(symbol, text) {
+		return this.format.replace(/<symbol>/gi, symbol).replace(/<text>/gi, text);
+	}
+
 	frame() {
 		const {frames} = this.spinner;
 		let frame = frames[this.frameIndex];
@@ -100,7 +106,7 @@ class Ora {
 
 		this.frameIndex = ++this.frameIndex % frames.length;
 
-		return frame + ' ' + this.text;
+		return this.parser(frame, this.text);
 	}
 
 	clear() {
@@ -188,7 +194,7 @@ class Ora {
 
 	stopAndPersist(options = {}) {
 		this.stop();
-		this.stream.write(`${options.symbol || ' '} ${options.text || this.text}\n`);
+		this.stream.write(this.parser(options.symbol || ' ', options.text || this.text) + '\n');
 
 		return this;
 	}

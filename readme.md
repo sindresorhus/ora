@@ -50,6 +50,13 @@ Type: `string`
 
 Text to display after the spinner.
 
+##### format
+
+Type: `string`
+Default: `<symbol> <text>`
+
+Formatting to display spinner and text.
+
 ##### spinner
 
 Type: `string` `Object`<br>
@@ -179,6 +186,18 @@ Manually render a new frame. Returns the instance.
 #### .frame()
 
 Get a new frame.
+
+#### .parser([symbol], [text])
+
+Get a new formatted string.
+
+#### symbol
+
+Type: `string`
+
+#### text
+
+Type: `string`
 
 #### .text
 

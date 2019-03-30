@@ -304,3 +304,8 @@ test('indent option throws', t => {
 		spinner.indent = -1;
 	}, 'The `indent` option must be an integer from 0 and up');
 });
+
+test('format option', macro, spinner => {
+	spinner.format = '[<symbol>] <text>';
+	spinner.stopAndPersist({symbol: '@', text: 'done'});
+}, /\[@\] done/);

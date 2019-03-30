@@ -19,6 +19,7 @@ spinner.text = 'Loading rainbows';
 expectType<boolean>(spinner.isSpinning);
 spinner.spinner = 'dots';
 spinner.indent = 5;
+spinner.format = '<symbol> <text>';
 
 spinner.start();
 spinner.start('Test text');
@@ -37,6 +38,7 @@ spinner.stopAndPersist({symbol: '@', text: 'all done'});
 spinner.clear();
 spinner.render();
 spinner.frame();
+spinner.parser();
 
 const resolves = Promise.resolve(1);
 promise(resolves, 'foo');
