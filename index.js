@@ -222,6 +222,7 @@ const oraFactory = function (opts) {
 };
 
 module.exports = oraFactory;
+// TODO: Remove this for the next major release
 module.exports.default = oraFactory;
 
 module.exports.promise = (action, options) => {

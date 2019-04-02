@@ -13,7 +13,7 @@
 		"node": ">=6"
 	},
 	"scripts": {
-		"test": "xo && ava && tsd-check"
+		"test": "xo && ava && tsd"
 	},
 	"files": [
 		"index.js",
@@ -40,14 +40,14 @@
 		"cli-cursor": "^2.1.0",
 		"cli-spinners": "^2.0.0",
 		"log-symbols": "^2.2.0",
-		"strip-ansi": "^5.0.0",
+		"strip-ansi": "^5.2.0",
 		"wcwidth": "^1.0.1"
 	},
 	"devDependencies": {
-		"@types/node": "^11.10.4",
-		"ava": "^1.2.1",
+		"@types/node": "^11.13.0",
+		"ava": "^1.4.1",
 		"get-stream": "^4.1.0",
-		"tsd-check": "^0.3.0",
+		"tsd": "^0.7.2",
 		"xo": "^0.24.0"
 	}
 }
