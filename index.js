@@ -211,7 +211,7 @@ class Ora {
 		const fullText = (typeof text === 'string') ? ' ' + text : '';
 
 		this.stop();
-		this.stream.write(`${fullPrefixText}${options.symbol || ' '}${fullText}n`);
+		this.stream.write(`${fullPrefixText}${options.symbol || ' '}${fullText}\n`);
 
 		return this;
 	}
