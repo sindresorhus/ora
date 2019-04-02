@@ -170,14 +170,14 @@ Symbol to replace the spinner with.
 Type: `string`<br>
 Default: Current `text`
 
-Text to be persisted.
+Text to be persisted after the symbol
 
 ###### prefixText
 
 Type: `string`<br>
 Default: Current `prefixText`
 
-Text to be persisted before symbol.
+Text to be persisted before the symbol.
 
 <img src="screenshot-2.gif" width="480">
 
@@ -195,7 +195,11 @@ Get a new frame.
 
 #### .text
 
-Change the text.
+Change the text after the spinner.
+
+#### .prefixText
+
+Change the text before the spinner.
 
 #### .color
 
