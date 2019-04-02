@@ -119,12 +119,12 @@ export type PersistOptions = Readonly<{
 	symbol?: string;
 
 	/**
-	 * Text to be persisted. Default: Current text.
+	 * Text to be persisted after the symbol. Default: Current `text`.
 	 */
 	text?: string;
 
 	/**
-	 * Text to be persisted before symbol. Default: Current prefixText.
+	 * Text to be persisted before the symbol. Default: Current `prefixText`.
 	 */
 	prefixText?: string;
 }>;
@@ -136,9 +136,14 @@ export interface Ora {
 	readonly isSpinning: boolean;
 
 	/**
-	 * Change the text.
+	 * Change the text after the spinner.
 	 */
 	text: string;
+	
+	/**
+	 * Change the text before the spinner.
+	 */
+	prefixText: string;
 
 	/**
 	 * Change the spinner color.
