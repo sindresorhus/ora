@@ -321,4 +321,3 @@ test('.stopAndPersist() with prefixText', macro, spinner => {
 test('.stopAndPersist() with manual prefixText', macro, spinner => {
 	spinner.stopAndPersist({symbol: '@', prefixText: 'baz', text: 'foo'});
 }, /baz @ foo/, {prefixText: 'bar'});
-
