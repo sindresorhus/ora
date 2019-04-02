@@ -181,7 +181,6 @@ Text to be persisted before symbol.
 
 <img src="screenshot-2.gif" width="480">
 
-
 #### .clear()
 
 Clear the spinner. Returns the instance.
