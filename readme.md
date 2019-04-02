@@ -168,14 +168,14 @@ Symbol to replace the spinner with.
 ###### text
 
 Type: `string`<br>
-Default: Current text
+Default: Current `text`
 
 Text to be persisted.
 
 ###### prefixText
 
 Type: `string`<br>
-Default: Current prefixText
+Default: Current `prefixText`
 
 Text to be persisted before symbol.
 
