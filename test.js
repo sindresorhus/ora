@@ -87,48 +87,48 @@ test('chain call to `.start()` with constructor', t => {
 
 test('.succeed()', macro, spinner => {
 	spinner.succeed();
-}, /(✔|√) foo\n/);
+}, /(✔|√) foo\n$/);
 
 test('.succeed() - with new text', macro, spinner => {
 	spinner.succeed('fooed');
-}, /(✔|√) fooed\n/);
+}, /(✔|√) fooed\n$/);
 
 test('.fail()', macro, spinner => {
 	spinner.fail();
-}, /(✖|×) foo\n/);
+}, /(✖|×) foo\n$/);
 
 test('.fail() - with new text', macro, spinner => {
 	spinner.fail('failed to foo');
-}, /(✖|×) failed to foo\n/);
+}, /(✖|×) failed to foo\n$/);
 
 test('.warn()', macro, spinner => {
 	spinner.warn();
-}, /(⚠|‼) foo\n/);
+}, /(⚠|‼) foo\n$/);
 
 test('.info()', macro, spinner => {
 	spinner.info();
-}, /(ℹ|i) foo\n/);
+}, /(ℹ|i) foo\n$/);
 
 test('.stopAndPersist() - with new text', macro, spinner => {
 	spinner.stopAndPersist({text: 'all done'});
-}, /\s all done\n/);
+}, /\s all done\n$/);
 
 test('.stopAndPersist() - with new symbol and text', macro, spinner => {
 	spinner.stopAndPersist({symbol: '@', text: 'all done'});
-}, /@ all done\n/);
+}, /@ all done\n$/);
 
 test('.start(text)', macro, spinner => {
 	spinner.start('Test text');
 	spinner.stopAndPersist();
-}, /Test text\n/);
+}, /Test text\n$/);
 
 test('.start() - isEnabled:false outputs text', macro, spinner => {
 	spinner.stop();
-}, /- foo\n/, {isEnabled: false});
+}, /- foo\n$/, {isEnabled: false});
 
 test('.stopAndPersist() - isEnabled:false outputs text', macro, spinner => {
 	spinner.stopAndPersist({symbol: '@', text: 'all done'});
-}, /- foo\n@ all done\n/, {isEnabled: false});
+}, /- foo\n@ all done\n$/, {isEnabled: false});
 
 test('.promise() - resolves', async t => {
 	const stream = getPassThroughStream();
@@ -145,7 +145,7 @@ test('.promise() - resolves', async t => {
 	await resolves;
 	stream.end();
 
-	t.regex(stripAnsi(await output), /(✔|√) foo\n/);
+	t.regex(stripAnsi(await output), /(✔|√) foo\n$/);
 });
 
 test('.promise() - rejects', async t => {
@@ -166,7 +166,7 @@ test('.promise() - rejects', async t => {
 
 	stream.end();
 
-	t.regex(stripAnsi(await output), /(✖|×) foo\n/);
+	t.regex(stripAnsi(await output), /(✖|×) foo\n$/);
 });
 
 test('erases wrapped lines', t => {
@@ -316,8 +316,8 @@ test('indent option throws', t => {
 
 test('.stopAndPersist() with prefixText', macro, spinner => {
 	spinner.stopAndPersist({symbol: '@', text: 'foo'});
-}, /bar @ foo\n/, {prefixText: 'bar'});
+}, /bar @ foo\n$/, {prefixText: 'bar'});
 
 test('.stopAndPersist() with manual prefixText', macro, spinner => {
 	spinner.stopAndPersist({symbol: '@', prefixText: 'baz', text: 'foo'});
-}, /baz @ foo\n/, {prefixText: 'bar'});
+}, /baz @ foo\n$/, {prefixText: 'bar'});
