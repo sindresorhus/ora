@@ -221,11 +221,13 @@ const oraFactory = function (opts) {
 	return new Ora(opts);
 };
 
-module.exports = oraFactory;
-// TODO: Remove this for the next major release
-module.exports.default = oraFactory;
+exports = module.exports = oraFactory; // eslint-disable-line no-multi-assign
 
-module.exports.promise = (action, options) => {
+// For TypeScript and Babel:
+exports.default = module.exports;
+Object.defineProperty(exports, '__esModule', {value: true});
+
+exports.promise = (action, options) => {
 	if (typeof action.then !== 'function') {
 		throw new TypeError('Parameter `action` must be a Promise');
 	}
