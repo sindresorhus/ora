@@ -15,6 +15,7 @@ ora({indent: 1});
 ora({interval: 80});
 ora({stream: new PassThroughStream()});
 ora({isEnabled: true});
+ora({consumeStdin: true});
 
 spinner.color = 'yellow';
 spinner.text = 'Loading rainbows';

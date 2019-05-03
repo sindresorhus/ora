@@ -9,6 +9,8 @@ const wcwidth = require('wcwidth');
 const TEXT = Symbol('text');
 const PREFIX_TEXT = Symbol('prefixText');
 
+const noop = () => null;
+
 class Ora {
 	constructor(options) {
 		if (typeof options === 'string') {
@@ -20,7 +22,8 @@ class Ora {
 		this.options = Object.assign({
 			text: '',
 			color: 'cyan',
-			stream: process.stderr
+			stream: process.stderr,
+			consumeStdin: false
 		}, options);
 
 		this.spinner = this.options.spinner;
@@ -37,6 +40,7 @@ class Ora {
 		this.prefixText = this.options.prefixText;
 		this.linesToClear = 0;
 		this.indent = this.options.indent;
+		this.consumeStdin = this.options.consumeStdin;
 	}
 
 	get indent() {
@@ -169,6 +173,10 @@ class Ora {
 		this.render();
 		this.id = setInterval(this.render.bind(this), this.interval);
 
+		if (this.consumeStdin && process.stdin.isTTY) {
+			this.startConsumingStdin();
+		}
+
 		return this;
 	}
 
@@ -185,7 +193,51 @@ class Ora {
 			cliCursor.show(this.stream);
 		}
 
+		if (this.consumeStdin && process.stdin.isTTY) {
+			this.stopConsumingStdin();
+		}
+
 		return this;
+	}
+
+	startConsumingStdin() {
+		const me = this;
+		const {stdin} = process;
+
+		this._stdinOldRawMode = stdin.isRaw;
+		this._stdinOldEmit = stdin.emit;
+		this._stdinOldEmitOwnProperty = Object.prototype.hasOwnProperty.call(stdin, 'emit');
+
+		stdin.setRawMode(true);
+		stdin.on('data', noop);
+		stdin.emit = function (event, data) {
+			if (event === 'data') {
+				if (data.indexOf(0x03) !== -1) {
+					if (this.listenerCount('SIGINT') > 0) {
+						this.emit('SIGINT');
+					} else {
+						process.emit('SIGINT');
+					}
+				}
+			} else {
+				me._stdinOldEmit.apply(this, arguments); // eslint-disable-line prefer-rest-params
+			}
+		};
+	}
+
+	stopConsumingStdin() {
+		const {stdin} = process;
+		stdin.setRawMode(this._stdinOldRawMode);
+		stdin.off('data', noop);
+		if (this._stdinOldEmitOwnProperty) {
+			stdin.emit = this._stdinOldEmit;
+		} else {
+			delete stdin.emit;
+		}
+
+		this._stdinOldRawMode = undefined;
+		this._stdinOldEmit = undefined;
+		this._stdinOldEmitOwnProperty = undefined;
 	}
 
 	succeed(text) {
