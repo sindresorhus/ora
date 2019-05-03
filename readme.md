@@ -118,7 +118,7 @@ Note that `{isEnabled: false}` doesn't mean it won't output anything. It just me
 
 ##### consumeStdin
 
-Type: `boolean`
+Type: `boolean`<br>
 Default: `false`
 
 Consume stdin input(except Ctrl+C) while running if it is TTY.
