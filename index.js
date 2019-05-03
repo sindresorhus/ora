@@ -212,7 +212,7 @@ class Ora {
 		stdin.on('data', noop);
 		stdin.emit = function (event, data) {
 			if (event === 'data') {
-				if (data.indexOf(0x03) !== -1) {
+				if (data.includes(0x03)) {
 					if (this.listenerCount('SIGINT') > 0) {
 						this.emit('SIGINT');
 					} else {
