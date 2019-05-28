@@ -170,7 +170,7 @@ Text to be persisted after the symbol
 
 ###### prefixText
 
-Type: `st ring`<br>
+Type: `string`<br>
 Default: Current `prefixText`
 
 Text to be persisted before the symbol.
