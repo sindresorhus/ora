@@ -4,7 +4,7 @@
 
 <p align="center">
 	<br>
-	<img src="screenshot.svg" width="500">
+	<img src="https://github.com/sindresorhus/ora/blob/master/screenshot.svg" width="500">
 	<br>
 </p>
 
