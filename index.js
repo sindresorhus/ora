@@ -172,12 +172,12 @@ class Ora {
 			cliCursor.hide(this.stream);
 		}
 
+		if (this.discardStdin && process.stdin.isTTY) {
+			this.startDiscardingStdin();
+		}
+
 		this.render();
 		this.id = setInterval(this.render.bind(this), this.interval);
-
-		if (this.discardStdin && process.stdin.isTTY) {
-			this.startConsumingStdin();
-		}
 
 		return this;
 	}
@@ -196,13 +196,13 @@ class Ora {
 		}
 
 		if (this.discardStdin && process.stdin.isTTY) {
-			this.stopConsumingStdin();
+			this.stopDiscardingStdin();
 		}
 
 		return this;
 	}
 
-	startConsumingStdin() {
+	startDiscardingStdin() {
 		const {stdin} = process;
 
 		this._stdinOldRawMode = stdin.isRaw;
@@ -224,10 +224,15 @@ class Ora {
 		};
 	}
 
-	stopConsumingStdin() {
+	stopDiscardingStdin() {
 		const {stdin} = process;
 		stdin.setRawMode(this._stdinOldRawMode);
-		stdin.off('data', noop);
+		stdin.removeListener('data', noop);
+
+		if (stdin.listenerCount('data') === 0) {
+			stdin.pause();
+		}
+
 		if (this._stdinOldEmitOwnProperty) {
 			stdin.emit = this._stdinOldEmit;
 		} else {

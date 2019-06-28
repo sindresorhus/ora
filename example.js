@@ -7,6 +7,12 @@ const spinner = new Ora({
 	spinner: process.argv[2]
 });
 
+const spinnerDiscardingStdin = new Ora({
+	discardStdin: true,
+	text: 'Loading unicorns, discarding stdin',
+	spinner: process.argv[2]
+});
+
 spinner.start();
 
 setTimeout(() => {
@@ -28,6 +34,11 @@ setTimeout(() => {
 
 setTimeout(() => {
 	spinner.succeed();
+	spinnerDiscardingStdin.start();
 }, 4000);
+
+setTimeout(() => {
+	spinnerDiscardingStdin.succeed();
+}, 7000);
 
 // $ node example.js nameOfSpinner
