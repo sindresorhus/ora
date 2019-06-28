@@ -7,38 +7,39 @@ const spinner = new Ora({
 	spinner: process.argv[2]
 });
 
+
 const spinnerDiscardingStdin = new Ora({
 	discardStdin: true,
 	text: 'Loading unicorns, discarding stdin',
 	spinner: process.argv[2]
 });
 
-spinner.start();
+spinnerDiscardingStdin.start();
+
+setTimeout(() => {
+	spinnerDiscardingStdin.succeed();
+	spinner.start();
+}, 3000);
 
 setTimeout(() => {
 	spinner.color = 'yellow';
 	spinner.text = `Loading ${chalk.red('rainbows')}`;
-}, 1000);
+}, 4000);
 
 setTimeout(() => {
 	spinner.color = 'green';
 	spinner.indent = 2;
 	spinner.text = 'Loading with indent';
-}, 2000);
+}, 5000);
 
 setTimeout(() => {
 	spinner.indent = 0;
 	spinner.spinner = 'moon';
 	spinner.text = 'Loading with different spinners';
-}, 3000);
+}, 6000);
 
 setTimeout(() => {
 	spinner.succeed();
-	spinnerDiscardingStdin.start();
-}, 4000);
-
-setTimeout(() => {
-	spinnerDiscardingStdin.succeed();
 }, 7000);
 
 // $ node example.js nameOfSpinner
