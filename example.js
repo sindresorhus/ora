@@ -7,7 +7,6 @@ const spinner = new Ora({
 	spinner: process.argv[2]
 });
 
-
 const spinnerDiscardingStdin = new Ora({
 	discardStdin: true,
 	text: 'Loading unicorns, discarding stdin',
