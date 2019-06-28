@@ -95,7 +95,7 @@ declare namespace ora {
 
 			@default false
 		*/
-		readonly consumeStdin?: boolean;
+		readonly discardStdin?: boolean;
 	}
 
 	interface PersistOptions {

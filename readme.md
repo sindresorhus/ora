@@ -116,7 +116,7 @@ Force enable/disable the spinner. If not specified, the spinner will be enabled 
 
 Note that `{isEnabled: false}` doesn't mean it won't output anything. It just means it won't output the spinner, colors, and other ansi escape codes. It will still log text.
 
-##### consumeStdin
+##### discardStdin
 
 Type: `boolean`<br>
 Default: `false`

@@ -23,7 +23,7 @@ class Ora {
 			text: '',
 			color: 'cyan',
 			stream: process.stderr,
-			consumeStdin: false
+			discardStdin: false
 		}, options);
 
 		this.spinner = this.options.spinner;
@@ -40,7 +40,7 @@ class Ora {
 		this.prefixText = this.options.prefixText;
 		this.linesToClear = 0;
 		this.indent = this.options.indent;
-		this.consumeStdin = this.options.consumeStdin;
+		this.discardStdin = this.options.discardStdin;
 	}
 
 	get indent() {
@@ -173,7 +173,7 @@ class Ora {
 		this.render();
 		this.id = setInterval(this.render.bind(this), this.interval);
 
-		if (this.consumeStdin && process.stdin.isTTY) {
+		if (this.discardStdin && process.stdin.isTTY) {
 			this.startConsumingStdin();
 		}
 
@@ -193,7 +193,7 @@ class Ora {
 			cliCursor.show(this.stream);
 		}
 
-		if (this.consumeStdin && process.stdin.isTTY) {
+		if (this.discardStdin && process.stdin.isTTY) {
 			this.stopConsumingStdin();
 		}
 
