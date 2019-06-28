@@ -9,7 +9,9 @@ const wcwidth = require('wcwidth');
 const TEXT = Symbol('text');
 const PREFIX_TEXT = Symbol('prefixText');
 
-const noop = () => null;
+const noop = () => {};
+
+const ASCII_ETX_CODE = 0x03;
 
 class Ora {
 	constructor(options) {
@@ -201,7 +203,6 @@ class Ora {
 	}
 
 	startConsumingStdin() {
-		const me = this;
 		const {stdin} = process;
 
 		this._stdinOldRawMode = stdin.isRaw;
@@ -210,17 +211,15 @@ class Ora {
 
 		stdin.setRawMode(true);
 		stdin.on('data', noop);
+
+		const self = this;
 		stdin.emit = function (event, data) {
 			if (event === 'data') {
-				if (data.includes(0x03)) {
-					if (this.listenerCount('SIGINT') > 0) {
-						this.emit('SIGINT');
-					} else {
-						process.emit('SIGINT');
-					}
+				if (data.includes(ASCII_ETX_CODE)) {
+					process.emit('SIGINT');
 				}
 			} else {
-				me._stdinOldEmit.apply(this, arguments); // eslint-disable-line prefer-rest-params
+				self._stdinOldEmit.apply(this, arguments); // eslint-disable-line prefer-rest-params
 			}
 		};
 	}

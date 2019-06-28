@@ -121,7 +121,7 @@ Note that `{isEnabled: false}` doesn't mean it won't output anything. It just me
 Type: `boolean`<br>
 Default: `false`
 
-Consume stdin input(except Ctrl+C) while running if it is TTY. Setting it to `true` will prevent spinner from twitching on input, outputting broken lines on `enter` presses, and prevent buffering of input for following reads or commands run after current process exits while spinner is running.
+Discard stdin input(except Ctrl+C) while running if it is TTY. Setting it to `true` will prevent spinner from twitching on input, outputting broken lines on `enter` presses, and prevent buffering of input for following reads or commands run after current process exits while spinner is running.
 
 ### Instance
 
