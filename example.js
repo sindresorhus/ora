@@ -3,13 +3,13 @@ const chalk = require('chalk');
 const Ora = require('.');
 
 const spinner = new Ora({
-	text: 'Loading unicorns',
+	discardStdin: false,
+	text: 'Loading unicorns, not discarding stdin',
 	spinner: process.argv[2]
 });
 
 const spinnerDiscardingStdin = new Ora({
-	discardStdin: true,
-	text: 'Loading unicorns, discarding stdin',
+	text: 'Loading unicorns',
 	spinner: process.argv[2]
 });
 

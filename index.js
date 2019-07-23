@@ -11,7 +11,7 @@ const PREFIX_TEXT = Symbol('prefixText');
 
 const noop = () => {};
 
-const ASCII_ETX_CODE = 0x03;
+const ASCII_ETX_CODE = 0x03; // Ctrl+C emits this code in console
 
 class Ora {
 	constructor(options) {
@@ -25,7 +25,7 @@ class Ora {
 			text: '',
 			color: 'cyan',
 			stream: process.stderr,
-			discardStdin: false
+			discardStdin: true
 		}, options);
 
 		this.spinner = this.options.spinner;
@@ -213,35 +213,35 @@ class Ora {
 		stdin.on('data', noop);
 
 		const self = this;
-		stdin.emit = function (event, data) {
-			if (event === 'data') {
-				if (data.includes(ASCII_ETX_CODE)) {
-					process.emit('SIGINT');
-				}
-			} else {
-				self._stdinOldEmit.apply(this, arguments); // eslint-disable-line prefer-rest-params
+		stdin.emit = function (event, data, ...args) {
+			if (event === 'data' && data.includes(ASCII_ETX_CODE)) {
+				process.emit('SIGINT');
 			}
+
+			self._stdinOldEmit.apply(this, [event, data, ...args]);
 		};
 	}
 
 	stopDiscardingStdin() {
-		const {stdin} = process;
-		stdin.setRawMode(this._stdinOldRawMode);
-		stdin.removeListener('data', noop);
+		if (this._stdinOldEmit !== undefined) {
+			const {stdin} = process;
+			stdin.setRawMode(this._stdinOldRawMode);
+			stdin.removeListener('data', noop);
 
-		if (stdin.listenerCount('data') === 0) {
-			stdin.pause();
+			if (stdin.listenerCount('data') === 0) {
+				stdin.pause();
+			}
+
+			if (this._stdinOldEmitOwnProperty) {
+				stdin.emit = this._stdinOldEmit;
+			} else {
+				delete stdin.emit;
+			}
+
+			this._stdinOldRawMode = undefined;
+			this._stdinOldEmit = undefined;
+			this._stdinOldEmitOwnProperty = undefined;
 		}
-
-		if (this._stdinOldEmitOwnProperty) {
-			stdin.emit = this._stdinOldEmit;
-		} else {
-			delete stdin.emit;
-		}
-
-		this._stdinOldRawMode = undefined;
-		this._stdinOldEmit = undefined;
-		this._stdinOldEmitOwnProperty = undefined;
 	}
 
 	succeed(text) {
