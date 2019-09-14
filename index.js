@@ -64,6 +64,10 @@ class Ora {
 				throw new Error('The given spinner must have a `frames` property');
 			}
 
+			if (spinner.interval !== undefined) {
+				this.interval = spinner.interval;
+			}
+
 			this._spinner = spinner;
 		} else if (process.platform === 'win32') {
 			this._spinner = cliSpinners.line;
