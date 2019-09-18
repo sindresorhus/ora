@@ -212,9 +212,9 @@ declare namespace ora {
 		/**
 		Get a new frame.
 
-		@returns The spinner instance.
+		@returns The spinner instance text.
 		*/
-		frame(): Ora;
+		frame(): string;
 	}
 }
 
