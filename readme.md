@@ -51,7 +51,7 @@ Text to display after the spinner.
 
 Type: `string`
 
-Text to display before the spinner.
+Text to display before the spinner. No prefix text will be displayed if set to empty string
 
 ##### spinner
 
@@ -174,7 +174,7 @@ Text to be persisted after the symbol
 Type: `string`<br>
 Default: Current `prefixText`
 
-Text to be persisted before the symbol.
+Text to be persisted before the symbol. No prefix text will be displayed if set to empty string
 
 <img src="screenshot-2.gif" width="480">
 
@@ -196,7 +196,7 @@ Change the text after the spinner.
 
 #### .prefixText
 
-Change the text before the spinner.
+Change the text before the spinner. No prefix text will be displayed if set to empty string
 
 #### .color
 

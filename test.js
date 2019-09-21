@@ -318,6 +318,14 @@ test('.stopAndPersist() with prefixText', macro, spinner => {
 	spinner.stopAndPersist({symbol: '@', text: 'foo'});
 }, /bar @ foo\n$/, {prefixText: 'bar'});
 
+test('.stopAndPersist() with empty prefixText', macro, spinner => {
+	spinner.stopAndPersist({symbol: '@', text: 'foo'});
+}, /@ foo\n$/, {prefixText: ''});
+
 test('.stopAndPersist() with manual prefixText', macro, spinner => {
 	spinner.stopAndPersist({symbol: '@', prefixText: 'baz', text: 'foo'});
 }, /baz @ foo\n$/, {prefixText: 'bar'});
+
+test('.stopAndPersist() with manual empty prefixText', macro, spinner => {
+	spinner.stopAndPersist({symbol: '@', prefixText: '', text: 'foo'});
+}, /@ foo\n$/, {prefixText: 'bar'});

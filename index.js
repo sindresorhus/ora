@@ -116,7 +116,7 @@ class Ora {
 		}
 
 		this.frameIndex = ++this.frameIndex % frames.length;
-		const fullPrefixText = typeof this.prefixText === 'string' ? this.prefixText + ' ' : '';
+		const fullPrefixText = (typeof this.prefixText === 'string' && this.prefixText !== '') ? this.prefixText + ' ' : '';
 		const fullText = typeof this.text === 'string' ? ' ' + this.text : '';
 
 		return fullPrefixText + frame + fullText;
@@ -207,7 +207,7 @@ class Ora {
 
 	stopAndPersist(options = {}) {
 		const prefixText = options.prefixText || this.prefixText;
-		const fullPrefixText = (typeof prefixText === 'string') ? prefixText + ' ' : '';
+		const fullPrefixText = (typeof prefixText === 'string' && prefixText !== '') ? prefixText + ' ' : '';
 		const text = options.text || this.text;
 		const fullText = (typeof text === 'string') ? ' ' + text : '';
 
