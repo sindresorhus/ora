@@ -11,7 +11,7 @@ const PREFIX_TEXT = Symbol('prefixText');
 
 const noop = () => {};
 
-const ASCII_ETX_CODE = 0x03; // Ctrl+C emits this code in console
+const ASCII_ETX_CODE = 0x03; // Ctrl+C emits this code
 
 class Ora {
 	constructor(options) {
