@@ -91,9 +91,9 @@ declare namespace ora {
 		readonly isEnabled?: boolean;
 
 		/**
-		Discard stdin input(except Ctrl+C) while running if it is TTY. Setting it to `true` will prevent spinner from twitching on input, outputting broken lines on `enter` presses, and prevent buffering of input for following reads or commands run after current process exits while spinner is running.
+		Discard stdin input (except Ctrl+C) while running if it's TTY. This prevents the spinner from twitching on input, outputting broken lines on `Enter` key presses, and prevents buffering of input while the spinner is running.
 
-		@default false
+		@default true
 		*/
 		readonly discardStdin?: boolean;
 	}
