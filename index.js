@@ -59,7 +59,7 @@ class Ora {
 		this._indent = indent;
 	}
 
-	updateInterval(interval) {
+	_updateInterval(interval) {
 		if (interval !== undefined) {
 			this.interval = interval;
 		}
@@ -89,7 +89,7 @@ class Ora {
 			throw new Error(`There is no built-in spinner named '${spinner}'. See https://github.com/sindresorhus/cli-spinners/blob/master/spinners.json for a full list.`);
 		}
 
-		this.updateInterval(this._spinner.interval);
+		this._updateInterval(this._spinner.interval);
 	}
 
 	get text() {
