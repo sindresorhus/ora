@@ -269,7 +269,7 @@ test('reset frameIndex when setting new spinner', async t => {
 	t.regex(stripAnsi(await output), /foo baz/);
 });
 
-test('reset interval when setting new spinner', t => {
+test('set the correct interval when changing spinner (object case)', t => {
 	const spinner = new Ora({
 		isEnabled: false,
 		spinner: {frames: ['foo', 'bar']},
@@ -281,6 +281,20 @@ test('reset interval when setting new spinner', t => {
 	spinner.spinner = {frames: ['baz'], interval: 200};
 
 	t.is(spinner.interval, 200);
+});
+
+test('set the correct interval when changing spinner (string case)', t => {
+	const spinner = new Ora({
+		isEnabled: false,
+		spinner: 'dots',
+		interval: 100
+	});
+
+	t.is(spinner.interval, 100);
+
+	spinner.spinner = 'layer';
+
+	t.is(spinner.interval, 150);
 });
 
 test('throw when incorrect spinner', t => {
