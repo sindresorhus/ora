@@ -59,6 +59,12 @@ class Ora {
 		this._indent = indent;
 	}
 
+	updateInterval(interval) {
+		if (interval !== undefined) {
+			this.interval = interval;
+		}
+	}
+
 	get spinner() {
 		return this._spinner;
 	}
@@ -69,10 +75,6 @@ class Ora {
 		if (typeof spinner === 'object') {
 			if (spinner.frames === undefined) {
 				throw new Error('The given spinner must have a `frames` property');
-			}
-
-			if (spinner.interval !== undefined) {
-				this.interval = spinner.interval;
 			}
 
 			this._spinner = spinner;
@@ -86,6 +88,8 @@ class Ora {
 		} else {
 			throw new Error(`There is no built-in spinner named '${spinner}'. See https://github.com/sindresorhus/cli-spinners/blob/master/spinners.json for a full list.`);
 		}
+
+		this.updateInterval(this._spinner.interval);
 	}
 
 	get text() {
