@@ -228,6 +228,7 @@ class Ora {
 			if (event === 'keypress') { // Fixes readline behavior
 				return;
 			}
+
 			if (event === 'data' && data.includes(ASCII_ETX_CODE)) {
 				process.emit('SIGINT');
 			}
