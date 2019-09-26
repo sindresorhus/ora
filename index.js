@@ -221,9 +221,13 @@ class Ora {
 
 		stdin.setRawMode(true);
 		stdin.on('data', noop);
+		stdin.resume();
 
 		const self = this;
 		stdin.emit = function (event, data, ...args) {
+			if (event === 'keypress') { // Fixes readline behavior
+				return;
+			}
 			if (event === 'data' && data.includes(ASCII_ETX_CODE)) {
 				process.emit('SIGINT');
 			}
