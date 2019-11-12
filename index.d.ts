@@ -93,7 +93,7 @@ declare namespace ora {
 		readonly isEnabled?: boolean;
 
 		/**
-		Discard stdin input (except Ctrl+C) while running if it's TTY. This prevents the spinner from twitching on input, outputting broken lines on `Enter` key presses, and prevents buffering of input while the spinner is running.
+		Discard stdin input (except Ctrl+C) while running if it's TTY. This prevents the spinner from twitching on input, outputting broken lines on `Enter` key presses, and prevents buffering of input while the spinner is running. Have no effect on Windows(always disabled).
 
 		@default true
 		*/

@@ -17,6 +17,14 @@ spinnerDiscardingStdin.start();
 
 setTimeout(() => {
 	spinnerDiscardingStdin.succeed();
+}, 1000);
+
+setTimeout(() => {
+	spinnerDiscardingStdin.start();
+}, 2000);
+
+setTimeout(() => {
+	spinnerDiscardingStdin.succeed();
 	spinner.start();
 }, 3000);
 

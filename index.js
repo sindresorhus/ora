@@ -57,6 +57,10 @@ class StdinDiscarder {
 	}
 
 	realStart() {
+		if (process.platform === 'win32') { // No known method to make it work under windows reliably
+			return;
+		}
+
 		const {stdin} = process;
 
 		this.oldRawMode = stdin.isRaw;
@@ -71,6 +75,10 @@ class StdinDiscarder {
 	}
 
 	realStop() {
+		if (process.platform === 'win32') { // No known method to make it work under windows reliably
+			return;
+		}
+
 		const {stdin} = process;
 
 		if (this.oldEmitOwnProperty) {
