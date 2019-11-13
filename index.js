@@ -1,4 +1,5 @@
 'use strict';
+const readline = require('readline');
 const chalk = require('chalk');
 const cliCursor = require('cli-cursor');
 const cliSpinners = require('cli-spinners');
@@ -6,16 +7,20 @@ const logSymbols = require('log-symbols');
 const stripAnsi = require('strip-ansi');
 const wcwidth = require('wcwidth');
 const isInteractive = require('is-interactive');
+const MuteStream = require('mute-stream');
 
 const TEXT = Symbol('text');
 const PREFIX_TEXT = Symbol('prefixText');
 
-const noop = () => {};
 const ASCII_ETX_CODE = 0x03; // Ctrl+C emits this code
 
 class StdinDiscarder {
 	constructor() {
 		this.requests = 0;
+
+		this.mutedStream = new MuteStream();
+		this.mutedStream.pipe(process.stdout);
+		this.mutedStream.mute();
 
 		const self = this;
 		this.ourEmit = function (event, data, ...args) {
@@ -61,17 +66,19 @@ class StdinDiscarder {
 			return;
 		}
 
-		const {stdin} = process;
+		this.rl = readline.createInterface({
+			input: process.stdin,
+			output: this.mutedStream
+		});
 
-		this.oldRawMode = stdin.isRaw;
-		this.oldEmit = stdin.emit;
-		this.oldEmitOwnProperty = Object.prototype.hasOwnProperty.call(stdin, 'emit');
-
-		stdin.setRawMode(true);
-		stdin.on('data', noop);
-		stdin.resume();
-
-		stdin.emit = this.ourEmit;
+		this.rl.on('SIGINT', () => {
+			if (process.listenerCount('SIGINT') === 0) {
+				process.emit('SIGINT');
+			} else {
+				this.rl.close();
+				process.kill(process.pid, 'SIGINT');
+			}
+		});
 	}
 
 	realStop() {
@@ -79,23 +86,8 @@ class StdinDiscarder {
 			return;
 		}
 
-		const {stdin} = process;
-
-		if (this.oldEmitOwnProperty) {
-			stdin.emit = this.oldEmit;
-		} else {
-			delete stdin.emit;
-		}
-
-		this.oldRawMode = undefined;
-		this.oldEmit = undefined;
-		this.oldEmitOwnProperty = undefined;
-
-		stdin.setRawMode(this.oldRawMode);
-		stdin.removeListener('data', noop);
-		if (stdin.listenerCount('data') === 0) {
-			stdin.pause();
-		}
+		this.rl.close();
+		this.rl = undefined;
 	}
 }
 
