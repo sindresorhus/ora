@@ -62,7 +62,8 @@ class StdinDiscarder {
 	}
 
 	realStart() {
-		if (process.platform === 'win32') { // No known method to make it work under windows reliably
+		// No known way to make it work reliably on Windows
+		if (process.platform === 'win32') {
 			return;
 		}
 
@@ -82,7 +83,7 @@ class StdinDiscarder {
 	}
 
 	realStop() {
-		if (process.platform === 'win32') { // No known method to make it work under windows reliably
+		if (process.platform === 'win32') {
 			return;
 		}
 
