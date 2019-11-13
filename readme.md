@@ -122,7 +122,9 @@ Note that `{isEnabled: false}` doesn't mean it won't output anything. It just me
 Type: `boolean`<br>
 Default: `true`
 
-Discard stdin input (except Ctrl+C) while running if it's TTY. This prevents the spinner from twitching on input, outputting broken lines on <kbd>Enter</kbd> key presses, and prevents buffering of input while the spinner is running. Have no effect on Windows(always disabled).
+Discard stdin input (except Ctrl+C) while running if it's TTY. This prevents the spinner from twitching on input, outputting broken lines on <kbd>Enter</kbd> key presses, and prevents buffering of input while the spinner is running.
+
+This has no effect on Windows as there's no good way to implement discarding stdin properly there.
 
 ### Instance
 
