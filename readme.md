@@ -258,3 +258,4 @@ JavaScript is single-threaded, so synchronous operations blocks the thread, incl
 - [briandowns/spinner](https://github.com/briandowns/spinner) - Terminal spinner/progress indicator for Go
 - [tj/go-spin](https://github.com/tj/go-spin) - Terminal spinner package for Go
 - [observablehq.com/@victordidenko/ora](https://observablehq.com/@victordidenko/ora) - Ora port to Observable notebooks
+- [spinnies](https://github.com/jcarpanelli/spinnies) - Terminal multispinner library for Node.js
