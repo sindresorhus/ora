@@ -251,7 +251,10 @@ class Ora {
 		}
 
 		if (!this.isEnabled) {
-			this.stream.write(`- ${this.text}\n`);
+			if (this.text) {
+				this.stream.write(`- ${this.text}\n`);
+			}
+
 			return this;
 		}
 
