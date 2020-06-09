@@ -159,11 +159,13 @@ class Ora {
 			}
 
 			this._spinner = spinner;
-		} else if (process.platform === 'win32') {
-			this._spinner = cliSpinners.line;
-		} else if (spinner === undefined) {
+		 } else if (spinner === undefined) {
 			// Set default spinner
-			this._spinner = cliSpinners.dots;
+			if (process.platform === 'win32') {
+				this._spinner = cliSpinners.line;
+			} else {
+				this._spinner = cliSpinners.dots;
+			}
 		} else if (cliSpinners[spinner]) {
 			this._spinner = cliSpinners[spinner];
 		} else {
