@@ -92,10 +92,14 @@ class StdinDiscarder {
 	}
 }
 
-const stdinDiscarder = new StdinDiscarder();
+let stdinDiscarder;
 
 class Ora {
 	constructor(options) {
+		if (!stdinDiscarder) {
+			stdinDiscarder = new StdinDiscarder();
+		}
+
 		if (typeof options === 'string') {
 			options = {
 				text: options
