@@ -18,6 +18,8 @@ declare namespace ora {
 		| 'white'
 		| 'gray';
 
+	type PrefixTextGenerator = () => string;
+
 	interface Options {
 		/**
 		Text to display after the spinner.
@@ -27,7 +29,7 @@ declare namespace ora {
 		/**
 		Text to display before the spinner. No prefix text will be displayed if set to an empty string.
 		*/
-		readonly prefixText?: string;
+		readonly prefixText?: string | PrefixTextGenerator;
 
 		/**
 		Name of one of the provided spinners. See [`example.js`](https://github.com/BendingBender/ora/blob/master/example.js) in this repo if you want to test out different spinners. On Windows, it will always use the line spinner as the Windows command-line doesn't have proper Unicode support.
@@ -122,7 +124,7 @@ declare namespace ora {
 
 		Default: Current `prefixText`.
 		*/
-		readonly prefixText?: string;
+		readonly prefixText?: string | PrefixTextGenerator;
 	}
 
 	interface Ora {
@@ -139,7 +141,7 @@ declare namespace ora {
 		/**
 		Change the text before the spinner. No prefix text will be displayed if set to an empty string.
 		*/
-		prefixText: string;
+		prefixText: string | PrefixTextGenerator;
 
 		/**
 		Change the spinner color.

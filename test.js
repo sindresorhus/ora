@@ -357,3 +357,7 @@ test('.stopAndPersist() with manual prefixText', macro, spinner => {
 test('.stopAndPersist() with manual empty prefixText', macro, spinner => {
 	spinner.stopAndPersist({symbol: '@', prefixText: '', text: 'foo'});
 }, /@ foo\n$/, {prefixText: 'bar'});
+
+test('.stopAndPersist() with dynamic prefixText', macro, spinner => {
+	spinner.stopAndPersist({symbol: '&', prefixText: () => 'babeee', text: 'yorkie'});
+}, /babeee & yorkie\n$/, {prefixText: () => 'babeee'});

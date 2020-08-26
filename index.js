@@ -189,9 +189,21 @@ class Ora {
 		return this.id !== undefined;
 	}
 
+	getFullPrefixText(prefixText = this[PREFIX_TEXT], postfix = ' ') {
+		if (typeof prefixText === 'string') {
+			return prefixText + postfix;
+		}
+
+		if (typeof prefixText === 'function') {
+			return prefixText() + postfix;
+		}
+
+		return '';
+	}
+
 	updateLineCount() {
 		const columns = this.stream.columns || 80;
-		const fullPrefixText = (typeof this[PREFIX_TEXT] === 'string') ? this[PREFIX_TEXT] + '-' : '';
+		const fullPrefixText = this.getFullPrefixText(this.prefixText, '-');
 		this.lineCount = stripAnsi(fullPrefixText + '--' + this[TEXT]).split('\n').reduce((count, line) => {
 			return count + Math.max(1, Math.ceil(wcwidth(line) / columns));
 		}, 0);
@@ -320,12 +332,11 @@ class Ora {
 
 	stopAndPersist(options = {}) {
 		const prefixText = options.prefixText || this.prefixText;
-		const fullPrefixText = (typeof prefixText === 'string' && prefixText !== '') ? prefixText + ' ' : '';
 		const text = options.text || this.text;
 		const fullText = (typeof text === 'string') ? ' ' + text : '';
 
 		this.stop();
-		this.stream.write(`${fullPrefixText}${options.symbol || ' '}${fullText}\n`);
+		this.stream.write(`${this.getFullPrefixText(prefixText, ' ')}${options.symbol || ' '}${fullText}\n`);
 
 		return this;
 	}

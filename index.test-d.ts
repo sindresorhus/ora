@@ -6,6 +6,7 @@ import {promise} from '.';
 const spinner = ora('Loading unicorns');
 ora({text: 'Loading unicorns'});
 ora({prefixText: 'Loading unicorns'});
+ora({prefixText: () => 'Loading unicorns dynamically'});
 ora({spinner: 'squish'});
 ora({spinner: {frames: ['-', '+', '-']}});
 ora({spinner: {interval: 80, frames: ['-', '+', '-']}});
