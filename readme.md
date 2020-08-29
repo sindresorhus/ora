@@ -48,7 +48,7 @@ Text to display after the spinner.
 
 Type: `string | () => string`
 
-Text or text generator to display before the spinner. No prefix text will be displayed if set to an empty string.
+Text or a function that returns text to display before the spinner. No prefix text will be displayed if set to an empty string.
 
 ##### spinner
 
