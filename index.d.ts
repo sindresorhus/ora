@@ -27,7 +27,7 @@ declare namespace ora {
 		readonly text?: string;
 
 		/**
-		Text to display before the spinner. No prefix text will be displayed if set to an empty string.
+		Text or a function that returns text to display before the spinner. No prefix text will be displayed if set to an empty string.
 		*/
 		readonly prefixText?: string | PrefixTextGenerator;
 
@@ -120,7 +120,7 @@ declare namespace ora {
 		readonly text?: string;
 
 		/**
-		Text to be persisted before the symbol. No prefix text will be displayed if set to an empty string.
+		Text or a function that returns text to be persisted before the symbol. No prefix text will be displayed if set to an empty string.
 
 		Default: Current `prefixText`.
 		*/
@@ -139,7 +139,7 @@ declare namespace ora {
 		text: string;
 
 		/**
-		Change the text before the spinner. No prefix text will be displayed if set to an empty string.
+		Change the text or function that returns text before the spinner. No prefix text will be displayed if set to an empty string.
 		*/
 		prefixText: string | PrefixTextGenerator;
 
