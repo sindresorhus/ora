@@ -24,6 +24,7 @@ const doSpinner = async (fn, extraOptions = {}) => {
 		text: 'foo',
 		color: false,
 		isEnabled: true,
+		isSilent: false,
 		...extraOptions
 	});
 
@@ -129,6 +130,19 @@ test('.start() - isEnabled:false outputs text', macro, spinner => {
 test('.stopAndPersist() - isEnabled:false outputs text', macro, spinner => {
 	spinner.stopAndPersist({symbol: '@', text: 'all done'});
 }, /- foo\n@ all done\n$/, {isEnabled: false});
+
+test('.start() - isSilent:true no output', macro, spinner => {
+	spinner.stop();
+}, /^(?![\s\S])/, {isSilent: true});
+
+test('.stopAndPersist() - isSilent:true no output', macro, spinner => {
+	spinner.stopAndPersist({symbol: '@', text: 'all done'});
+}, /^(?![\s\S])/, {isSilent: true});
+
+test('.stopAndPersist() - isSilent:true can be disabled', macro, spinner => {
+	spinner.isSilent = false;
+	spinner.stopAndPersist({symbol: '@', text: 'all done'});
+}, /@ all done\n$/, {isSilent: true});
 
 test('.promise() - resolves', async t => {
 	const stream = getPassThroughStream();
@@ -294,16 +308,19 @@ test('set the correct interval when changing spinner (string case)', t => {
 
 	spinner.spinner = 'layer';
 
-	t.is(spinner.interval, 150);
+	const expectedInterval = process.platform === 'win32' ? 130 : 150;
+	t.is(spinner.interval, expectedInterval);
 });
 
-test('throw when incorrect spinner', t => {
-	const ora = new Ora();
+if (process.platform !== 'win32') {
+	test('throw when incorrect spinner', t => {
+		const ora = new Ora();
 
-	t.throws(() => {
-		ora.spinner = 'random-string-12345';
-	}, /no built-in spinner/);
-});
+		t.throws(() => {
+			ora.spinner = 'random-string-12345';
+		}, /no built-in spinner/);
+	});
+}
 
 test('indent option', t => {
 	const stream = getPassThroughStream();
