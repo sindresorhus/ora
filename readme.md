@@ -119,7 +119,7 @@ Note that `{isEnabled: false}` doesn't mean it won't output anything. It just me
 Type: `boolean`\
 Default: `false`
 
-Disable the spinner and all log text.  With `{isSilent: true}` all output is suppressed and `isEnabled` will be considered `false`.
+Disable the spinner and all log text. All output is suppressed and `isEnabled` will be considered `false`.
 
 ##### discardStdin
 
