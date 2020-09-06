@@ -93,7 +93,7 @@ declare namespace ora {
 		readonly isEnabled?: boolean;
 
 		/**
-		Disable the spinner and all log text.  With `{isSilent: true}` all output is suppressed and `isEnabled` will be considered `false`.
+		Disable the spinner and all log text. All output is suppressed and `isEnabled` will be considered `false`.
 
 		@default false
 		*/
