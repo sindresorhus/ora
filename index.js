@@ -205,9 +205,10 @@ class Ora {
 	updateLineCount() {
 		const columns = this.stream.columns || 80;
 		const fullPrefixText = this.getFullPrefixText(this.prefixText, '-');
-		this.lineCount = stripAnsi(fullPrefixText + '--' + this[TEXT]).split('\n').reduce((count, line) => {
-			return count + Math.max(1, Math.ceil(wcwidth(line) / columns));
-		}, 0);
+		this.lineCount = 0;
+		for (const line of stripAnsi(fullPrefixText + '--' + this[TEXT]).split('\n'))
+			this.lineCount += Math.max(1, Math.ceil(wcwidth(line) / columns));
+		}
 	}
 
 	set text(value) {
