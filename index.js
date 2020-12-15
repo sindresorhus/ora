@@ -250,7 +250,7 @@ class Ora {
 		let frame = frames[this.frameIndex];
 
 		if (this.color) {
-			frame = chalk[this.color](frame);
+			frame = chalk`{${this.color} ${frame}}`;
 		}
 
 		this.frameIndex = ++this.frameIndex % frames.length;
