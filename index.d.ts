@@ -16,7 +16,23 @@ declare namespace ora {
 		| 'magenta'
 		| 'cyan'
 		| 'white'
-		| 'gray';
+	        | 'gray'
+		| 'blackBright'
+		| 'redBright'
+		| 'greenBright'
+		| 'yellowBright'
+		| 'blueBright'
+		| 'magentaBright'
+		| 'cyanBright'
+		| 'whiteBright'
+		| `rgb(${string})`
+		| `hex(${string})`
+		| `keyword(${string})`
+		| `hsl(${string})`
+		| `hsv(${string})`
+		| `hwb(${string})`
+		| `ansi(${string})`
+		| `ansi256(${string})`;
 
 	type PrefixTextGenerator = () => string;
 
