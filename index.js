@@ -7,7 +7,7 @@ const logSymbols = require('log-symbols');
 const stripAnsi = require('strip-ansi');
 const wcwidth = require('wcwidth');
 const isInteractive = require('is-interactive');
-const MuteStream = require('mute-stream');
+const {BufferListStream} = require('bl');
 
 const TEXT = Symbol('text');
 const PREFIX_TEXT = Symbol('prefixText');
@@ -18,9 +18,8 @@ class StdinDiscarder {
 	constructor() {
 		this.requests = 0;
 
-		this.mutedStream = new MuteStream();
+		this.mutedStream = new BufferListStream();
 		this.mutedStream.pipe(process.stdout);
-		this.mutedStream.mute();
 
 		const self = this;
 		this.ourEmit = function (event, data, ...args) {
