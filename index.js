@@ -398,7 +398,7 @@ module.exports.promise = (action, options) => {
 		try {
 			await action;
 			spinner.succeed();
-		} catch {
+		} catch (_) {
 			spinner.fail();
 		}
 	})();
