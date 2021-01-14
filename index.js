@@ -130,6 +130,7 @@ class Ora {
 		this.indent = this.options.indent;
 		this.discardStdin = this.options.discardStdin;
 		this.isDiscardingStdin = false;
+		this.isStopping = false;
 	}
 
 	get indent() {
@@ -140,7 +141,7 @@ class Ora {
 		if (!(indent >= 0 && Number.isInteger(indent))) {
 			throw new Error('The `indent` option must be an integer from 0 and up');
 		}
-		
+
 		if (indent > this._indent) {
 			this.stream.clearLine(-1);
 		}
@@ -263,7 +264,7 @@ class Ora {
 		return fullPrefixText + frame + fullText;
 	}
 
-	clear(isStopping = false) {
+	clear() {
 		if (!this.isEnabled || !this.stream.isTTY) {
 			return this;
 		}
@@ -272,13 +273,13 @@ class Ora {
 			if (i > 0) {
 				this.stream.moveCursor(0, -1);
 			}
-			
-			if (isStopping) {
+
+			if (this.isStopping) {
 				this.stream.clearLine();
 			} else {
 				this.stream.clearLine(1);
 			}
-			
+
 			this.stream.cursorTo(this.indent);
 		}
 
@@ -343,7 +344,9 @@ class Ora {
 		clearInterval(this.id);
 		this.id = undefined;
 		this.frameIndex = 0;
-		this.clear(true);
+		this.isStopping = true;
+		this.clear();
+		this.isStopping = false;
 		if (this.hideCursor) {
 			cliCursor.show(this.stream);
 		}
