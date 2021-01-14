@@ -273,7 +273,7 @@ class Ora {
 				this.stream.moveCursor(0, -1);
 			}
 			
-			if (stopping) {
+			if (isStopping) {
 				this.stream.clearLine();
 			} else {
 				this.stream.clearLine(1);
