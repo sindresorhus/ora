@@ -140,6 +140,10 @@ class Ora {
 		if (!(indent >= 0 && Number.isInteger(indent))) {
 			throw new Error('The `indent` option must be an integer from 0 and up');
 		}
+		
+		if (indent > this._indent) {
+			this.stream.clearLine(-1);
+		}
 
 		this._indent = indent;
 	}
@@ -259,7 +263,7 @@ class Ora {
 		return fullPrefixText + frame + fullText;
 	}
 
-	clear() {
+	clear(stopping = false) {
 		if (!this.isEnabled || !this.stream.isTTY) {
 			return this;
 		}
@@ -268,8 +272,13 @@ class Ora {
 			if (i > 0) {
 				this.stream.moveCursor(0, -1);
 			}
-
-			this.stream.clearLine();
+			
+			if (stopping) {
+				this.stream.clearLine();
+			} else {
+				this.stream.clearLine(1);
+			}
+			
 			this.stream.cursorTo(this.indent);
 		}
 
@@ -334,7 +343,7 @@ class Ora {
 		clearInterval(this.id);
 		this.id = undefined;
 		this.frameIndex = 0;
-		this.clear();
+		this.clear(true);
 		if (this.hideCursor) {
 			cliCursor.show(this.stream);
 		}
