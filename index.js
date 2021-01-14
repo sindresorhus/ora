@@ -263,7 +263,7 @@ class Ora {
 		return fullPrefixText + frame + fullText;
 	}
 
-	clear(stopping = false) {
+	clear(isStopping = false) {
 		if (!this.isEnabled || !this.stream.isTTY) {
 			return this;
 		}
