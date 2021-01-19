@@ -110,6 +110,7 @@ class Ora {
 			color: 'cyan',
 			stream: process.stderr,
 			discardStdin: true,
+			unicode: !process.platform === 'win32',
 			...options
 		};
 
@@ -163,7 +164,7 @@ class Ora {
 			}
 
 			this._spinner = spinner;
-		} else if (process.platform === 'win32') {
+		} else if (!this.options.unicode) {
 			this._spinner = cliSpinners.line;
 		} else if (spinner === undefined) {
 			// Set default spinner
