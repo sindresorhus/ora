@@ -13,6 +13,11 @@ const TEXT = Symbol('text');
 const PREFIX_TEXT = Symbol('prefixText');
 
 const ASCII_ETX_CODE = 0x03; // Ctrl+C emits this code
+const terminalSupportsUnicode = function() {
+	return process.platform !== 'win32'
+	|| process.env.TERM_PROGRAM === 'vscode'
+	|| !!process.env.WT_SESSION
+}
 
 class StdinDiscarder {
 	constructor() {
@@ -163,7 +168,7 @@ class Ora {
 			}
 
 			this._spinner = spinner;
-		} else if (process.platform === 'win32') {
+		} else if (!terminalSupportsUnicode()) {
 			this._spinner = cliSpinners.line;
 		} else if (spinner === undefined) {
 			// Set default spinner
