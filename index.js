@@ -13,11 +13,12 @@ const TEXT = Symbol('text');
 const PREFIX_TEXT = Symbol('prefixText');
 
 const ASCII_ETX_CODE = 0x03; // Ctrl+C emits this code
-const terminalSupportsUnicode = function () {
-	return process.platform !== 'win32' ||
+
+const terminalSupportsUnicode = () => (
+	process.platform !== 'win32' ||
 	process.env.TERM_PROGRAM === 'vscode' ||
 	Boolean(process.env.WT_SESSION);
-};
+);
 
 class StdinDiscarder {
 	constructor() {
