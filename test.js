@@ -365,6 +365,27 @@ test('indent option throws', t => {
 	}, 'The `indent` option must be an integer from 0 and up');
 });
 
+test('handles wrapped lines when length of indent + text is greater than columns', t => {
+	const stream = getPassThroughStream();
+	stream.isTTY = true;
+	stream.columns = 20;
+
+	const spinner = new Ora({
+		stream,
+		text: 'foo',
+		color: false,
+		isEnabled: true
+	});
+
+	spinner.render();
+
+	spinner.text = '0'.repeat(spinner.stream.columns - 5);
+	spinner.indent = 15;
+	spinner.render();
+
+	t.is(spinner.lineCount, 2);
+});
+
 test('.stopAndPersist() with prefixText', macro, spinner => {
 	spinner.stopAndPersist({symbol: '@', text: 'foo'});
 }, /bar @ foo\n$/, {prefixText: 'bar'});

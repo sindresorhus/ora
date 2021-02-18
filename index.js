@@ -142,6 +142,7 @@ class Ora {
 		}
 
 		this._indent = indent;
+		this.updateLineCount();
 	}
 
 	_updateInterval(interval) {
@@ -215,7 +216,7 @@ class Ora {
 		const columns = this.stream.columns || 80;
 		const fullPrefixText = this.getFullPrefixText(this.prefixText, '-');
 		this.lineCount = 0;
-		for (const line of stripAnsi(fullPrefixText + '--' + this[TEXT]).split('\n')) {
+		for (const line of stripAnsi(' '.repeat(this.indent) + fullPrefixText + '--' + this[TEXT]).split('\n')) {
 			this.lineCount += Math.max(1, Math.ceil(wcwidth(line) / columns));
 		}
 	}
