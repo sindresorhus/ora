@@ -271,14 +271,21 @@ class Ora {
 			return this;
 		}
 
+		this.stream.cursorTo(0);
+
 		for (let i = 0; i < this.linesToClear; i++) {
 			if (i > 0) {
 				this.stream.moveCursor(0, -1);
 			}
 
-			this.stream.clearLine();
+			this.stream.clearLine(1);
+		}
+
+		if (this.indent || this.lastIndent !== this.indent) {
 			this.stream.cursorTo(this.indent);
 		}
+
+		this.lastIndent = this.indent;
 
 		this.linesToClear = 0;
 
