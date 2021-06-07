@@ -168,7 +168,7 @@ class Ora {
 		} else if (spinner === undefined) {
 			// Set default spinner
 			this._spinner = cliSpinners.dots;
-		} else if (cliSpinners[spinner]) {
+		} else if (spinner !== 'default' && cliSpinners[spinner]) {
 			this._spinner = cliSpinners[spinner];
 		} else {
 			throw new Error(`There is no built-in spinner named '${spinner}'. See https://github.com/sindresorhus/cli-spinners/blob/main/spinners.json for a full list.`);
