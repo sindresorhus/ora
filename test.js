@@ -322,8 +322,10 @@ if (process.platform !== 'win32') {
 	});
 }
 
-test('throw when spinner is set to "default"', t => {
-	t.throws(() => new Ora({spinner: 'default'}), /no built-in spinner/);
+test('throw when spinner is set to `default`', t => {
+	t.throws(() => {
+		new Ora({spinner: 'default'});
+	}, /no built-in spinner/);
 });
 
 test('indent option', t => {
