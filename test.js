@@ -324,7 +324,7 @@ if (process.platform !== 'win32') {
 
 test('throw when spinner is set to `default`', t => {
 	t.throws(() => {
-		new Ora({spinner: 'default'});
+		new Ora({spinner: 'default'}); // eslint-disable-line no-new
 	}, /no built-in spinner/);
 });
 
