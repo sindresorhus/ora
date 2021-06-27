@@ -262,3 +262,4 @@ JavaScript is single-threaded, so synchronous operations blocks the thread, incl
 - [observablehq.com/@victordidenko/ora](https://observablehq.com/@victordidenko/ora) - Ora port to Observable notebooks
 - [spinnies](https://github.com/jcarpanelli/spinnies) - Terminal multi-spinner library for Node.js
 - [kia](https://github.com/HarryPeach/kia) - Simple terminal spinners for Deno 🦕
+- [AxeriCliSpinner](https://github.com/AxeriDev/CliSpinner)
