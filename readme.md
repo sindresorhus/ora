@@ -226,7 +226,7 @@ Change the spinner indent.
 ### ora.promise(action, text)
 ### ora.promise(action, options)
 
-Starts a spinner for a promise. The spinner is stopped with `.succeed()` if the promise fulfills or with `.fail()` if it rejects. Returns a Promise.
+Starts a spinner for a function or a promise. The spinner is stopped with `.succeed()` if the promise fulfills or with `.fail()` if it rejects. Returns the Promise.
 
 #### action
 
