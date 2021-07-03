@@ -385,23 +385,35 @@ const oraFactory = function (options) {
 
 module.exports = oraFactory;
 
-module.exports.promise = (action, options) => {
+// https://github.com/sindresorhus/ora/issues/169#issuecomment-873269524
+module.exports.promise = async (action, options) => {
+	const actionIsFunction = typeof action === 'function';
 	// eslint-disable-next-line promise/prefer-await-to-then
-	if (typeof action.then !== 'function') {
-		throw new TypeError('Parameter `action` must be a Promise');
+	const actionIsPromise = typeof action.then === 'function';
+
+	if (!actionIsFunction && !actionIsPromise) {
+		throw new TypeError('Parameter `action` must be a Function or a Promise');
 	}
 
-	const spinner = new Ora(options);
+	const {successText, failText} = typeof options === 'object' ?
+		options :
+		{successText: undefined, failText: undefined};
+
+	const spinner = new Ora(options); // Set the initial string or ora options.
 	spinner.start();
-
-	(async () => {
-		try {
-			await action;
-			spinner.succeed();
-		} catch {
-			spinner.fail();
-		}
-	})();
-
-	return spinner;
+	try {
+		const promise = actionIsFunction ? action(spinner) : action;
+		const result = await promise;
+		spinner.succeed(successText === undefined ?
+			undefined :
+			(typeof successText === 'string' ? successText : successText(result))
+		);
+		return result;
+	} catch (error) {
+		spinner.fail(failText === undefined ?
+			undefined :
+			(typeof failText === 'string' ? failText : failText(error))
+		);
+		throw error;
+	}
 };

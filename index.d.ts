@@ -262,16 +262,16 @@ declare const ora: {
 	(options?: ora.Options | string): ora.Ora;
 
 	/**
-	Starts a spinner for a promise. The spinner is stopped with `.succeed()` if the promise fulfills or with `.fail()` if it rejects.
+	Starts a spinner for a function or a promise. The spinner is stopped with `.succeed()` if the promise fulfills or with `.fail()` if it rejects. Returns the Promise.
 
 	@param action - The promise to start the spinner for.
 	@param options - If a string is provided, it is treated as a shortcut for `options.text`.
 	@returns The spinner instance.
 	*/
-	promise(
-		action: PromiseLike<unknown>,
-		options?: ora.Options | string
-	): ora.Ora;
+	promise<T>(
+		action: ((spinner: ora.Ora) => PromiseLike<T>) | PromiseLike<T>,
+		options?: ora.PromiseOptions<T> | string
+	): Promise<T>;
 };
 
 export = ora;
