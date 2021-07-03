@@ -21,23 +21,23 @@ declare namespace ora {
 
 	interface Options {
 		/**
-		Text to display after the spinner.
-		*/
+		 Text to display after the spinner.
+		 */
 		readonly text?: string;
 
 		/**
-		Text or a function that returns text to display before the spinner. No prefix text will be displayed if set to an empty string.
-		*/
+		 Text or a function that returns text to display before the spinner. No prefix text will be displayed if set to an empty string.
+		 */
 		readonly prefixText?: string | PrefixTextGenerator;
 
 		/**
-		Name of one of the provided spinners. See [`example.js`](https://github.com/BendingBender/ora/blob/main/example.js) in this repo if you want to test out different spinners. On Windows, it will always use the line spinner as the Windows command-line doesn't have proper Unicode support.
+		 Name of one of the provided spinners. See [`example.js`](https://github.com/BendingBender/ora/blob/main/example.js) in this repo if you want to test out different spinners. On Windows, it will always use the line spinner as the Windows command-line doesn't have proper Unicode support.
 
-		@default 'dots'
+		 @default 'dots'
 
-		Or an object like:
+		 Or an object like:
 
-		@example
+		 @example
 		```
 		{
 			interval: 80, // Optional
@@ -55,25 +55,25 @@ declare namespace ora {
 		readonly color?: Color;
 
 		/**
-		Set to `false` to stop Ora from hiding the cursor.
+		 Set to `false` to stop Ora from hiding the cursor.
 
-		@default true
+		 @default true
 		*/
 		readonly hideCursor?: boolean;
 
 		/**
-		Indent the spinner with the given number of spaces.
+		 Indent the spinner with the given number of spaces.
 
-		@default 0
+		 @default 0
 		*/
 		readonly indent?: number;
 
 		/**
-		Interval between each frame.
+		 Interval between each frame.
 
-		Spinners provide their own recommended interval, so you don't really need to specify this.
+		 Spinners provide their own recommended interval, so you don't really need to specify this.
 
-		Default: Provided by the spinner or `100`.
+		 Default: Provided by the spinner or `100`.
 		*/
 		readonly interval?: number;
 
@@ -87,32 +87,45 @@ declare namespace ora {
 		readonly stream?: NodeJS.WritableStream;
 
 		/**
-		Force enable/disable the spinner. If not specified, the spinner will be enabled if the `stream` is being run inside a TTY context (not spawned or piped) and/or not in a CI environment.
+		 Force enable/disable the spinner. If not specified, the spinner will be enabled if the `stream` is being run inside a TTY context (not spawned or piped) and/or not in a CI environment.
 
-		Note that `{isEnabled: false}` doesn't mean it won't output anything. It just means it won't output the spinner, colors, and other ansi escape codes. It will still log text.
+		 Note that `{isEnabled: false}` doesn't mean it won't output anything. It just means it won't output the spinner, colors, and other ansi escape codes. It will still log text.
 		*/
 		readonly isEnabled?: boolean;
 
 		/**
-		Disable the spinner and all log text. All output is suppressed and `isEnabled` will be considered `false`.
+		 Disable the spinner and all log text. All output is suppressed and `isEnabled` will be considered `false`.
 
-		@default false
-		*/
+		 @default false
+		 */
 		readonly isSilent?: boolean;
 
 		/**
-		Discard stdin input (except Ctrl+C) while running if it's TTY. This prevents the spinner from twitching on input, outputting broken lines on `Enter` key presses, and prevents buffering of input while the spinner is running.
+		 Discard stdin input (except Ctrl+C) while running if it's TTY. This prevents the spinner from twitching on input, outputting broken lines on `Enter` key presses, and prevents buffering of input while the spinner is running.
 
-		This has no effect on Windows as there's no good way to implement discarding stdin properly there.
+		 This has no effect on Windows as there's no good way to implement discarding stdin properly there.
 
-		@default true
-		*/
+		 @default true
+		 */
 		readonly discardStdin?: boolean;
 	}
 
+	type PromiseOptions<T = unknown> = Options & {
+		/**
+		The new text of the spinner when the promise is resolved.
+
+		If undefined, will keep the initial text. */
+		successText?: ((resp: T) => string) | string;
+		/**
+		The new text of the spinner when the promise is rejected.
+
+		If undefined, will keep the initial text. */
+		failText?: ((error: Error) => string) | string;
+	};
+
 	interface PersistOptions {
 		/**
-		Symbol to replace the spinner with.
+		 Symbol to replace the spinner with.
 
 		@default ' '
 		*/
@@ -126,17 +139,17 @@ declare namespace ora {
 		readonly text?: string;
 
 		/**
-		Text or a function that returns text to be persisted before the symbol. No prefix text will be displayed if set to an empty string.
+		 Text or a function that returns text to be persisted before the symbol. No prefix text will be displayed if set to an empty string.
 
-		Default: Current `prefixText`.
-		*/
+		 Default: Current `prefixText`.
+		 */
 		readonly prefixText?: string | PrefixTextGenerator;
 	}
 
 	interface Ora {
 		/**
-		A boolean of whether the instance is currently spinning.
-		*/
+		 A boolean of whether the instance is currently spinning.
+		 */
 		readonly isSpinning: boolean;
 
 		/**
@@ -262,16 +275,16 @@ declare const ora: {
 	(options?: ora.Options | string): ora.Ora;
 
 	/**
-	Starts a spinner for a promise. The spinner is stopped with `.succeed()` if the promise fulfills or with `.fail()` if it rejects.
+	Starts a spinner for a function or a promise. The spinner is stopped with `.succeed()` if the promise fulfills or with `.fail()` if it rejects.
 
 	@param action - The promise to start the spinner for.
 	@param options - If a string is provided, it is treated as a shortcut for `options.text`.
 	@returns The spinner instance.
 	*/
-	promise(
-		action: PromiseLike<unknown>,
-		options?: ora.Options | string
-	): ora.Ora;
+	promise<T>(
+		action: ((spinner: ora.Ora) => PromiseLike<T>) | PromiseLike<T>,
+		options?: ora.PromiseOptions<T> | string
+	): Promise<T>;
 };
 
 export = ora;
