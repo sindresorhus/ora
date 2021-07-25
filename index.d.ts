@@ -134,14 +134,19 @@ declare namespace ora {
 	}
 
 	interface PromiseOptions<T> extends Options {
-		/** The new text of the spinner when the promise is resolved.
-     *
-     * * If undefined, will keep the initial text. */
-		successText?: ((resp: T) => string) | string;
-		/** The new text of the spinner when the promise is rejected.
-     *
-     * If undefined, will keep the initial text. */
-		failText?: ((error: Error) => string) | string;
+		/**
+    The new text of the spinner when the promise is resolved.
+
+    If undefined, will keep the initial text.
+    */
+		successText?: string | ((result: T) => string);
+
+		/**
+    The new text of the spinner when the promise is rejected.
+
+    If undefined, will keep the initial text.
+    */
+		failText?: string | ((error: Error) => string);
 	}
 
 	interface Ora {
@@ -270,7 +275,7 @@ declare const ora: {
 	}, 1000);
 	```
 	*/
-	(options?: ora.Options | string): ora.Ora;
+	(options?: string | ora.Options): ora.Ora;
 
 	/**
 	Starts a spinner for a function or a promise. The spinner is stopped with `.succeed()` if the promise fulfills or with `.fail()` if it rejects. Returns the Promise.
@@ -280,8 +285,8 @@ declare const ora: {
 	@returns The spinner instance.
 	*/
 	promise<T>(
-		action: ((spinner: ora.Ora) => PromiseLike<T>) | PromiseLike<T>,
-		options?: ora.PromiseOptions<T> | string
+		action: PromiseLike<T> | ((spinner: ora.Ora) => PromiseLike<T>),
+		options?: string | ora.PromiseOptions<T>
 	): Promise<T>;
 };
 
