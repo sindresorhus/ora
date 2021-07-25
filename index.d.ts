@@ -133,6 +133,17 @@ declare namespace ora {
 		readonly prefixText?: string | PrefixTextGenerator;
 	}
 
+	interface PromiseOptions<T> extends Options {
+		/** The new text of the spinner when the promise is resolved.
+     *
+     * * If undefined, will keep the initial text. */
+		successText?: ((resp: T) => string) | string;
+		/** The new text of the spinner when the promise is rejected.
+     *
+     * If undefined, will keep the initial text. */
+		failText?: ((error: Error) => string) | string;
+	}
+
 	interface Ora {
 		/**
 		A boolean of whether the instance is currently spinning.
