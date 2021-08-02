@@ -135,17 +135,17 @@ declare namespace ora {
 
 	interface PromiseOptions<T> extends Options {
 		/**
-    The new text of the spinner when the promise is resolved.
+		The new text of the spinner when the promise is resolved.
 
-    If undefined, will keep the initial text.
-    */
+		If undefined, will keep the initial text.
+		*/
 		successText?: string | ((result: T) => string);
 
 		/**
-    The new text of the spinner when the promise is rejected.
+		The new text of the spinner when the promise is rejected.
 
-    If undefined, will keep the initial text.
-    */
+		If undefined, will keep the initial text.
+		*/
 		failText?: string | ((error: Error) => string);
 	}
 
