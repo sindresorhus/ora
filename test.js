@@ -3,6 +3,8 @@ import getStream from 'get-stream';
 import test from 'ava';
 import stripAnsi from 'strip-ansi';
 import Ora from './index.js';
+import TransformTTY from 'transform-tty';
+import cliSpinners from 'cli-spinners';
 
 const spinnerCharacter = process.platform === 'win32' ? '-' : '⠋';
 const noop = () => {};
@@ -405,3 +407,548 @@ test('.stopAndPersist() with manual empty prefixText', macro, spinner => {
 test('.stopAndPersist() with dynamic prefixText', macro, spinner => {
 	spinner.stopAndPersist({symbol: '&', prefixText: () => 'babeee', text: 'yorkie'});
 }, /babeee & yorkie\n$/, {prefixText: () => 'babeee'});
+
+// New clear method tests
+
+const currentClearMethod = transFormTTY => {
+	const spinner = new Ora({
+		text: 'foo',
+		color: false,
+		isEnabled: true,
+		stream: transFormTTY,
+		spinner: {
+			frames: ['-']
+		}
+	});
+
+	let firstIndent = true;
+
+	spinner.clear = function () {
+		if (!this.isEnabled || !this.stream.isTTY) {
+			return this;
+		}
+
+		for (let i = 0; i < this.linesToClear; i++) {
+			if (i > 0) {
+				this.stream.moveCursor(0, -1);
+			}
+
+			this.stream.clearLine();
+			this.stream.cursorTo(this.indent);
+		}
+
+		// It's too quick to be noticeable, but indent doesn't get applied
+		// for the first render if linesToClear = 0. New clear method
+		// doesn't have this issue, since it's called outside of the loop
+		if (this.linesToClear === 0 && firstIndent && this.indent) {
+			this.stream.cursorTo(this.indent);
+			firstIndent = false;
+		}
+
+		this.linesToClear = 0;
+
+		return this;
+	}.bind(spinner);
+
+	return spinner;
+};
+
+test.serial('new clear method test, basic', t => {
+	const transformTTY = new TransformTTY({crlf: true});
+	transformTTY.addSequencer();
+	transformTTY.addSequencer(null, true);
+	/*
+		If the frames from this sequence differ from the previous sequence,
+		it means the spinner.clear method has failed to fully clear output between calls to render
+	*/
+
+	const currentClearTTY = new TransformTTY({crlf: true});
+	currentClearTTY.addSequencer();
+
+	const currentOra = currentClearMethod(currentClearTTY);
+
+	const spinner = new Ora({
+		text: 'foo',
+		color: false,
+		isEnabled: true,
+		stream: transformTTY,
+		spinner: {
+			frames: ['-']
+		}
+	});
+
+	currentOra.render();
+	spinner.render();
+
+	currentOra.text = 'bar';
+	currentOra.indent = 5;
+	currentOra.render();
+
+	spinner.text = 'bar';
+	spinner.indent = 5;
+	spinner.render();
+
+	currentOra.text = 'baz';
+	currentOra.indent = 10;
+	currentOra.render();
+
+	spinner.text = 'baz';
+	spinner.indent = 10;
+	spinner.render();
+
+	currentOra.succeed('boz?');
+
+	spinner.succeed('boz?');
+
+	const [sequenceString, clearedSequenceString] = transformTTY.getSequenceStrings();
+	const [frames, clearedFrames] = transformTTY.getFrames();
+
+	t.is(sequenceString, '          ✔ boz?\n');
+	t.is(sequenceString, clearedSequenceString);
+
+	t.deepEqual(clearedFrames, ['- foo', '     - bar', '          - baz', '          ✔ boz?\n']);
+	t.deepEqual(frames, clearedFrames);
+
+	const currentString = currentClearTTY.getSequenceStrings();
+
+	t.is(currentString, '          ✔ boz?\n');
+
+	const currentFrames = currentClearTTY.getFrames();
+
+	t.deepEqual(frames, currentFrames);
+	// Frames created using new clear method are deep equal to frames created using current clear method
+});
+
+test('new clear method test, erases wrapped lines', t => {
+	const transformTTY = new TransformTTY({crlf: true, columns: 40});
+	transformTTY.addSequencer();
+	transformTTY.addSequencer(null, true);
+
+	const currentClearTTY = new TransformTTY({crlf: true, columns: 40});
+	currentClearTTY.addSequencer();
+
+	const currentOra = currentClearMethod(currentClearTTY);
+
+	const cursorAtRow = () => {
+		const cursor = transformTTY.getCursorPos();
+		return cursor.y === 0 ? 0 : cursor.y * -1;
+	};
+
+	const clearedLines = () => {
+		return transformTTY.toString().split('\n').length;
+	};
+
+	const spinner = new Ora({
+		text: 'foo',
+		color: false,
+		isEnabled: true,
+		stream: transformTTY,
+		spinner: {
+			frames: ['-']
+		}
+	});
+
+	currentOra.render();
+
+	spinner.render();
+	t.is(clearedLines(), 1); // Cleared 'foo'
+	t.is(cursorAtRow(), 0);
+
+	currentOra.text = 'foo\n\nbar';
+	currentOra.render();
+
+	spinner.text = 'foo\n\nbar';
+	spinner.render();
+	t.is(clearedLines(), 3); // Cleared 'foo\n\nbar'
+	t.is(cursorAtRow(), -2);
+
+	currentOra.clear();
+	currentOra.text = '0'.repeat(currentOra.stream.columns + 10);
+	currentOra.render();
+	currentOra.render();
+
+	spinner.clear();
+	spinner.text = '0'.repeat(spinner.stream.columns + 10);
+	spinner.render();
+	spinner.render();
+	t.is(clearedLines(), 2);
+	t.is(cursorAtRow(), -1);
+
+	currentOra.clear();
+	currentOra.text = '🦄'.repeat(currentOra.stream.columns + 10);
+	currentOra.render();
+	currentOra.render();
+
+	spinner.clear();
+	spinner.text = '🦄'.repeat(spinner.stream.columns + 10);
+	spinner.render();
+	spinner.render();
+	t.is(clearedLines(), 3);
+	t.is(cursorAtRow(), -2);
+
+	currentOra.clear();
+	currentOra.text = '🦄'.repeat(currentOra.stream.columns - 2) + '\nfoo';
+	currentOra.render();
+	currentOra.render();
+
+	spinner.clear();
+	spinner.text = '🦄'.repeat(spinner.stream.columns - 2) + '\nfoo';
+	spinner.render();
+	spinner.render();
+	t.is(clearedLines(), 3);
+	t.is(cursorAtRow(), -2);
+
+	currentOra.clear();
+	currentOra.prefixText = 'foo\n';
+	currentOra.text = '\nbar';
+	currentOra.render();
+	currentOra.render();
+
+	spinner.clear();
+	spinner.prefixText = 'foo\n';
+	spinner.text = '\nbar';
+	spinner.render();
+	spinner.render();
+	t.is(clearedLines(), 3); // Cleared 'foo\n\nbar'
+	t.is(cursorAtRow(), -2);
+
+	const [sequenceString, clearedSequenceString] = transformTTY.getSequenceStrings();
+	const [frames, clearedFrames] = transformTTY.getFrames();
+
+	t.is(sequenceString, 'foo\n - \nbar');
+	t.is(sequenceString, clearedSequenceString);
+
+	t.deepEqual(clearedFrames, [
+		'- foo',
+		'- foo\n\nbar',
+		'- 00000000000000000000000000000000000000\n000000000000',
+		'- 00000000000000000000000000000000000000\n000000000000',
+		'- 🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄\n' +
+			'🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄\n' +
+			'🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄',
+		'- 🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄\n' +
+			'🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄\n' +
+			'🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄',
+		'- 🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄\n' +
+			'🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄\n' +
+			'foo',
+		'- 🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄\n' +
+			'🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄\n' +
+			'foo',
+		'foo\n - \nbar',
+		'foo\n - \nbar'
+	]);
+
+	t.deepEqual(frames, clearedFrames);
+
+	const currentClearString = currentClearTTY.toString();
+	t.is(currentClearString, 'foo\n - \nbar');
+
+	const currentFrames = currentClearTTY.getFrames();
+	t.deepEqual(frames, currentFrames);
+});
+
+test('new clear method, stress test', t => {
+	const rando = (min, max) => {
+		min = Math.ceil(min);
+		max = Math.floor(max);
+		return Math.floor(Math.random() * ((max - min) + min));
+	};
+
+	const rAnDoMaNiMaLs = (min, max) => {
+		const length = rando(min, max);
+		let result = '';
+		const THEAMINALS = ['🐯', '🦁', '🐮', '🐷', '🐽', '🐸', '🐙', '🐵', '🐦', '🐧', '🐔', '🐒', '🙉', '🙈', '🐣', '🐥', '🐺', '🐗', '🐴', '🦄', '🐝', '🐛', ...Array.from({length: 5}).fill('\n')];
+
+		for (let i = 0; i < length; i++) {
+			result += THEAMINALS[Math.floor(Math.random() * THEAMINALS.length)];
+		}
+
+		return result;
+	};
+
+	const randos = () => {
+		return rAnDoMaNiMaLs(rando(5, 15), rando(25, 50));
+	};
+
+	const randomize = (s1, s2) => {
+		const spnr = cliSpinners.random;
+		const txt = randos();
+		const indent = rando(0, 15);
+
+		s1.spinner = spnr;
+		s2.spinner = spnr;
+		s1.text = txt;
+		s2.text = txt;
+		s1.indent = indent;
+		s2.indent = indent;
+	};
+
+	const transformTTY = new TransformTTY({crlf: true});
+	transformTTY.addSequencer();
+	transformTTY.addSequencer(null, true);
+
+	const currentClearTTY = new TransformTTY({crlf: true});
+	currentClearTTY.addSequencer();
+
+	const currentOra = currentClearMethod(currentClearTTY);
+
+	const spinner = new Ora({
+		color: false,
+		isEnabled: true,
+		stream: transformTTY
+	});
+
+	randomize(spinner, currentOra);
+
+	for (let x = 0; x < 100; x++) {
+		if (x % 10 === 0) {
+			randomize(spinner, currentOra);
+		}
+
+		if (x % 5 === 0) {
+			const indent = rando(0, 25);
+			spinner.indent = indent;
+			currentOra.indent = indent;
+		}
+
+		if (x % 15 === 0) {
+			let {text} = spinner;
+			const loops = rando(1, 10);
+
+			for (let x = 0; x < loops; x++) {
+				const pos = Math.floor(Math.random() * text.length);
+				text = text.slice(0, pos) + '\n' + text.slice(pos + 1);
+			}
+
+			spinner.text = text;
+			currentOra.text = text;
+		}
+
+		spinner.render();
+		currentOra.render();
+	}
+
+	spinner.succeed('🙉');
+	currentOra.succeed('🙉');
+
+	const currentFrames = currentClearTTY.getFrames();
+	const [frames, clearedFrames] = transformTTY.getFrames();
+
+	t.deepEqual(frames, clearedFrames);
+
+	t.deepEqual(frames.slice(0, currentFrames.length), currentFrames);
+
+	// Console.log(frames);
+	// console.log(clearFrames);
+});
+/*
+Example output:
+
+[
+  '               ▏ \n',
+  '               ▎ \n',
+  '               ▍ \n',
+  '               ▌ \n',
+  '               ▋ \n',
+  '               ▊ \n',
+  '               ▉ \n',
+  '               ▊ \n',
+  '               ▋ \n',
+  '               ▌ \n',
+  '   d ',
+  '   q ',
+  '   p ',
+  '   b ',
+  '   d ',
+  '                 q \n',
+  '                 p \n',
+  '                 b \n',
+  '                 d \n',
+  '                 q \n',
+  '                ◢ 🐗🐧🐥🐺🐵\n\n',
+  '                ◣ 🐗🐧🐥🐺🐵\n\n',
+  '                ◤ 🐗🐧🐥🐺🐵\n\n',
+  '                ◥ 🐗🐧🐥🐺🐵\n\n',
+  '                ◢ 🐗🐧🐥🐺🐵\n\n',
+  '                     ◣ 🐗🐧🐥🐺🐵\n\n',
+  '                     ◤ 🐗🐧🐥🐺🐵\n\n',
+  '                     ◥ 🐗🐧🐥🐺🐵\n\n',
+  '                     ◢ 🐗🐧🐥🐺🐵\n\n',
+  '                     ◣ 🐗🐧🐥🐺🐵\n\n',
+  '      ⠋ \n�🐮�\n\n�\n',
+  '      ⠙ \n�🐮�\n\n�\n',
+  '      ⠹ \n�🐮�\n\n�\n',
+  '      ⠸ \n�🐮�\n\n�\n',
+  '      ⠼ \n�🐮�\n\n�\n',
+  '                 ⠴ \n�🐮�\n\n�\n',
+  '                 ⠦ \n�🐮�\n\n�\n',
+  '                 ⠧ \n�🐮�\n\n�\n',
+  '                 ⠇ \n�🐮�\n\n�\n',
+  '                 ⠏ \n�🐮�\n\n�\n',
+  '       □ ',
+  '       ■ ',
+  '       □ ',
+  '       ■ ',
+  '       □ ',
+  '           ■ \n',
+  '           □ \n',
+  '           ■ \n',
+  '           □ \n',
+  '           ■ \n',
+  '  .   🐗',
+  '  ..  🐗',
+  '  ... 🐗',
+  '      🐗',
+  '  .   🐗',
+  '               ..  🐗',
+  '               ... 🐗',
+  '                   🐗',
+  '               .   🐗',
+  '               ..  🐗',
+  ' ▖ 🐔\n🐸\n',
+  ' ▘ 🐔\n🐸\n',
+  ' ▝ 🐔\n🐸\n',
+  ' ▗ 🐔\n🐸\n',
+  ' ▖ 🐔\n🐸\n',
+  '  ▘ 🐔\n🐸\n',
+  '  ▝ 🐔\n🐸\n',
+  '  ▗ 🐔\n🐸\n',
+  '  ▖ 🐔\n🐸\n',
+  '  ▘ 🐔\n🐸\n',
+  '          ( ●    ) 🐔🐗',
+  '          (  ●   ) 🐔🐗',
+  '          (   ●  ) 🐔🐗',
+  '          (    ● ) 🐔🐗',
+  '          (     ●) 🐔🐗',
+  '(    ● ) �\n\n�',
+  '(   ●  ) �\n\n�',
+  '(  ●   ) �\n\n�',
+  '( ●    ) �\n\n�',
+  '(●     ) �\n\n�',
+  '     ⧇ 🐷🐛🐔🦁🐷🙉',
+  '     ⧆ 🐷🐛🐔🦁🐷🙉',
+  '     ⧇ 🐷🐛🐔🦁🐷🙉',
+  '     ⧆ 🐷🐛🐔🦁🐷🙉',
+  '     ⧇ 🐷🐛🐔🦁🐷🙉',
+  '       ⧆ 🐷🐛🐔🦁🐷🙉',
+  '       ⧇ 🐷🐛🐔🦁🐷🙉',
+  '       ⧆ 🐷🐛🐔🦁🐷🙉',
+  '       ⧇ 🐷🐛🐔🦁🐷🙉',
+  '       ⧆ 🐷🐛🐔🦁🐷🙉',
+  '                        _ 🐽🦄🐣\n🐣🐧🐔🦁🐦�\n',
+  '                        _ 🐽🦄🐣\n🐣🐧🐔🦁🐦�\n',
+  '                        _ 🐽🦄🐣\n🐣🐧🐔🦁🐦�\n',
+  '                        - 🐽🦄🐣\n🐣🐧🐔🦁🐦�\n',
+  '                        ` 🐽🦄🐣\n🐣🐧🐔🦁🐦�\n',
+  '                  ` 🐽🦄🐣\n🐣🐧🐔🦁🐦�\n',
+  "                  ' 🐽🦄🐣\n🐣🐧🐔🦁🐦�\n",
+  '                  ´ 🐽🦄🐣\n🐣🐧🐔🦁🐦�\n',
+  '                  - 🐽🦄🐣\n🐣🐧🐔🦁🐦�\n',
+  '                  _ 🐽🦄🐣\n🐣🐧🐔🦁🐦�\n',
+  ... 1 more item
+]
+[
+  '               ▏ \n',
+  '               ▎ \n',
+  '               ▍ \n',
+  '               ▌ \n',
+  '               ▋ \n',
+  '               ▊ \n',
+  '               ▉ \n',
+  '               ▊ \n',
+  '               ▋ \n',
+  '               ▌ \n',
+  '   d ',
+  '   q ',
+  '   p ',
+  '   b ',
+  '   d ',
+  '                 q \n',
+  '                 p \n',
+  '                 b \n',
+  '                 d \n',
+  '                 q \n',
+  '                ◢ 🐗🐧🐥🐺🐵\n\n',
+  '                ◣ 🐗🐧🐥🐺🐵\n\n',
+  '                ◤ 🐗🐧🐥🐺🐵\n\n',
+  '                ◥ 🐗🐧🐥🐺🐵\n\n',
+  '                ◢ 🐗🐧🐥🐺🐵\n\n',
+  '                     ◣ 🐗🐧🐥🐺🐵\n\n',
+  '                     ◤ 🐗🐧🐥🐺🐵\n\n',
+  '                     ◥ 🐗🐧🐥🐺🐵\n\n',
+  '                     ◢ 🐗🐧🐥🐺🐵\n\n',
+  '                     ◣ 🐗🐧🐥🐺🐵\n\n',
+  '      ⠋ \n�🐮�\n\n�\n',
+  '      ⠙ \n�🐮�\n\n�\n',
+  '      ⠹ \n�🐮�\n\n�\n',
+  '      ⠸ \n�🐮�\n\n�\n',
+  '      ⠼ \n�🐮�\n\n�\n',
+  '                 ⠴ \n�🐮�\n\n�\n',
+  '                 ⠦ \n�🐮�\n\n�\n',
+  '                 ⠧ \n�🐮�\n\n�\n',
+  '                 ⠇ \n�🐮�\n\n�\n',
+  '                 ⠏ \n�🐮�\n\n�\n',
+  '       □ ',
+  '       ■ ',
+  '       □ ',
+  '       ■ ',
+  '       □ ',
+  '           ■ \n',
+  '           □ \n',
+  '           ■ \n',
+  '           □ \n',
+  '           ■ \n',
+  '  .   🐗',
+  '  ..  🐗',
+  '  ... 🐗',
+  '      🐗',
+  '  .   🐗',
+  '               ..  🐗',
+  '               ... 🐗',
+  '                   🐗',
+  '               .   🐗',
+  '               ..  🐗',
+  ' ▖ 🐔\n🐸\n',
+  ' ▘ 🐔\n🐸\n',
+  ' ▝ 🐔\n🐸\n',
+  ' ▗ 🐔\n🐸\n',
+  ' ▖ 🐔\n🐸\n',
+  '  ▘ 🐔\n🐸\n',
+  '  ▝ 🐔\n🐸\n',
+  '  ▗ 🐔\n🐸\n',
+  '  ▖ 🐔\n🐸\n',
+  '  ▘ 🐔\n🐸\n',
+  '          ( ●    ) 🐔🐗',
+  '          (  ●   ) 🐔🐗',
+  '          (   ●  ) 🐔🐗',
+  '          (    ● ) 🐔🐗',
+  '          (     ●) 🐔🐗',
+  '(    ● ) �\n\n�',
+  '(   ●  ) �\n\n�',
+  '(  ●   ) �\n\n�',
+  '( ●    ) �\n\n�',
+  '(●     ) �\n\n�',
+  '     ⧇ 🐷🐛🐔🦁🐷🙉',
+  '     ⧆ 🐷🐛🐔🦁🐷🙉',
+  '     ⧇ 🐷🐛🐔🦁🐷🙉',
+  '     ⧆ 🐷🐛🐔🦁🐷🙉',
+  '     ⧇ 🐷🐛🐔🦁🐷🙉',
+  '       ⧆ 🐷🐛🐔🦁🐷🙉',
+  '       ⧇ 🐷🐛🐔🦁🐷🙉',
+  '       ⧆ 🐷🐛🐔🦁🐷🙉',
+  '       ⧇ 🐷🐛🐔🦁🐷🙉',
+  '       ⧆ 🐷🐛🐔🦁🐷🙉',
+  '                        _ 🐽🦄🐣\n🐣🐧🐔🦁🐦�\n',
+  '                        _ 🐽🦄🐣\n🐣🐧🐔🦁🐦�\n',
+  '                        _ 🐽🦄🐣\n🐣🐧🐔🦁🐦�\n',
+  '                        - 🐽🦄🐣\n🐣🐧🐔🦁🐦�\n',
+  '                        ` 🐽🦄🐣\n🐣🐧🐔🦁🐦�\n',
+  '                  ` 🐽🦄🐣\n🐣🐧🐔🦁🐦�\n',
+  "                  ' 🐽🦄🐣\n🐣🐧🐔🦁🐦�\n",
+  '                  ´ 🐽🦄🐣\n🐣🐧🐔🦁🐦�\n',
+  '                  - 🐽🦄🐣\n🐣🐧🐔🦁🐦�\n',
+  '                  _ 🐽🦄🐣\n🐣🐧🐔🦁🐦�\n',
+  ... 1 more item
+]
+*/
