@@ -285,6 +285,18 @@ const spinner = ora(`Loading ${chalk.red('unicorns')}`).start();
 
 JavaScript is single-threaded, so synchronous operations blocks the thread, including the spinner animation. Prefer asynchronous operations whenever possible.
 
+### TypeScript Usage
+
+For most Node.js projects, ora will need to use a dynamic import. This can be done in most projects as so.
+
+```typescript
+// Load the library dynamically with a default message
+const ora = (await import('ora')).default(`Default message here`);
+
+// Create the initial instance
+const loading = ora.start();
+```
+
 ## Related
 
 - [cli-spinners](https://github.com/sindresorhus/cli-spinners) - Spinners for use in the terminal
