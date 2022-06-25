@@ -79,7 +79,17 @@ export class StdinDiscarder {
 			return;
 		}
 
+		const {stdin} = process;
+		const wasPaused = stdin.isPaused();
+
 		this.#rl.close();
+
+		// Keep stdin unpaused across the readline close if it is already
+		// unpaused. See #209 for more details.
+		if (!wasPaused && stdin.isPaused()) {
+			stdin.resume();
+		}
+
 		this.#rl = undefined;
 	}
 }
