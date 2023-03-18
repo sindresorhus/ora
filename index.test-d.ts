@@ -1,6 +1,7 @@
 import {PassThrough as PassThroughStream} from 'node:stream';
 import {expectType} from 'tsd';
-import ora, {oraPromise} from './index.js';
+import cliSpinners from 'cli-spinners';
+import ora, {oraPromise, spinners} from './index.js';
 
 const spinner = ora('Loading unicorns');
 ora({text: 'Loading unicorns'});
@@ -68,3 +69,5 @@ void oraPromise(async spinner => {
 	successText: result => `Resolved with number ${result}`,
 	failText: 'bar',
 });
+
+expectType<typeof cliSpinners>(spinners);

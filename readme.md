@@ -55,7 +55,7 @@ Text or a function that returns text to display before the spinner. No prefix te
 Type: `string | object`\
 Default: `'dots'` <img src="screenshot-spinner.gif" width="14">
 
-Name of one of the [provided spinners](https://github.com/sindresorhus/cli-spinners/blob/main/spinners.json). See `example.js` in this repo if you want to test out different spinners. On Windows, it will always use the `line` spinner as the Windows command-line doesn't have proper Unicode support.
+Name of one of the [provided spinners](#spinners). See `example.js` in this repo if you want to test out different spinners. On Windows, it will always use the `line` spinner as the Windows command-line doesn't have proper Unicode support.
 
 Or an object like:
 
@@ -267,6 +267,12 @@ Type: `string | ((error: Error) => string) | undefined`
 The new text of the spinner when the promise is rejected.
 
 Keeps the existing text if `undefined`.
+
+### spinners
+
+Type: `Record<string, Spinner>`
+
+All [provided spinners](https://github.com/sindresorhus/cli-spinners/blob/main/spinners.json).
 
 ## FAQ
 

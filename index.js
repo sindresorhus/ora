@@ -378,3 +378,5 @@ export async function oraPromise(action, options) {
 		throw error;
 	}
 }
+
+export {default as spinners} from 'cli-spinners';

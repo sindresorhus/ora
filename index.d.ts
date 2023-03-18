@@ -306,3 +306,5 @@ export function oraPromise<T>(
 	action: PromiseLike<T> | ((spinner: Ora) => PromiseLike<T>),
 	options?: string | PromiseOptions<T>
 ): Promise<T>;
+
+export {default as spinners} from 'cli-spinners';
