@@ -6,6 +6,8 @@ const spinner = ora('Loading unicorns');
 ora({text: 'Loading unicorns'});
 ora({prefixText: 'Loading unicorns'});
 ora({prefixText: () => 'Loading unicorns dynamically'});
+ora({suffixText: 'Loading unicorns'});
+ora({suffixText: () => 'Loading unicorns dynamically'});
 ora({spinner: 'squish'});
 ora({spinner: {frames: ['-', '+', '-']}});
 ora({spinner: {interval: 80, frames: ['-', '+', '-']}});
@@ -39,6 +41,7 @@ spinner.stopAndPersist();
 spinner.stopAndPersist({text: 'all done'});
 spinner.stopAndPersist({symbol: '@', text: 'all done'});
 spinner.stopAndPersist({prefixText: 'all done'});
+spinner.stopAndPersist({suffixText: 'all done'});
 spinner.clear();
 spinner.render();
 spinner.frame();
@@ -57,6 +60,7 @@ void oraPromise(async () => {
 }, 'foo');
 void oraPromise(async spinner => {
 	spinner.prefixText = 'foo';
+	spinner.suffixText = '[loading]';
 	await resolves;
 	return 7;
 }, {

@@ -18,6 +18,8 @@ export type Color =
 
 export type PrefixTextGenerator = () => string;
 
+export type SuffixTextGenerator = () => string;
+
 export interface Options {
 	/**
 	Text to display after the spinner.
@@ -28,6 +30,11 @@ export interface Options {
 	Text or a function that returns text to display before the spinner. No prefix text will be displayed if set to an empty string.
 	*/
 	readonly prefixText?: string | PrefixTextGenerator;
+
+	/**
+	Text or a function that returns text to display after the spinner text. No suffix text will be displayed if set to an empty string.
+	*/
+	readonly suffixText?: string | SuffixTextGenerator;
 
 	/**
 	Name of one of the provided spinners. See [`example.js`](https://github.com/BendingBender/ora/blob/main/example.js) in this repo if you want to test out different spinners. On Windows, it will always use the line spinner as the Windows command-line doesn't have proper Unicode support.
@@ -130,6 +137,13 @@ export interface PersistOptions {
 	Default: Current `prefixText`.
 	*/
 	readonly prefixText?: string | PrefixTextGenerator;
+
+	/**
+	Text or a function that returns text to be persisted after the text after the symbol. No suffix text will be displayed if set to an empty string.
+
+	Default: Current `suffixText`.
+	*/
+	readonly suffixText?: string | SuffixTextGenerator;
 }
 
 export interface PromiseOptions<T> extends Options {
@@ -160,6 +174,13 @@ export interface Ora {
 	No prefix text will be displayed if set to an empty string.
 	*/
 	prefixText: string;
+
+	/**
+	Change the text or function that returns text after the spinner text.
+
+	No suffix text will be displayed if set to an empty string.
+	*/
+	suffixText: string;
 
 	/**
 	Change the spinner color.
