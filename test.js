@@ -4,8 +4,7 @@ import getStream from 'get-stream';
 import test from 'ava';
 import stripAnsi from 'strip-ansi';
 import TransformTTY from 'transform-tty';
-import cliSpinners from 'cli-spinners';
-import ora, {oraPromise} from './index.js';
+import ora, {oraPromise, spinners} from './index.js';
 
 const spinnerCharacter = process.platform === 'win32' ? '-' : '⠋';
 const noop = () => {};
@@ -666,7 +665,7 @@ test('new clear method, stress test', t => {
 	const randos = () => rAnDoMaNiMaLs(rando(5, 15), rando(25, 50));
 
 	const randomize = (s1, s2) => {
-		const spnr = cliSpinners.random;
+		const spnr = spinners.random;
 		const txt = randos();
 		const indent = rando(0, 15);
 
