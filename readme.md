@@ -229,8 +229,6 @@ Default: Current `prefixText`
 
 Text to be persisted before the symbol. No prefix text will be displayed if set to an empty string.
 
-<img src="screenshot-2.gif" width="480">
-
 ###### suffixText
 
 Type: `string`\
@@ -238,7 +236,7 @@ Default: Current `suffixText`
 
 Text to be persisted after the text after the symbol. No suffix text will be displayed if set to an empty string.
 
-<!-- TODO: add demo gif -->
+<img src="screenshot-2.gif" width="480">
 
 #### .clear()
 
