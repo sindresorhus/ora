@@ -1,5 +1,6 @@
 import process from 'node:process';
 import chalk from 'chalk';
+import logSymbols from 'log-symbols';
 import ora from './index.js';
 
 const spinner = ora({
@@ -46,7 +47,30 @@ setTimeout(() => {
 }, 6000);
 
 setTimeout(() => {
-	spinner.succeed();
-}, 7000);
+	spinner.prefixText = chalk.dim('[info]');
+	spinner.spinner = 'dots';
+	spinner.text = 'Loading with prefix text';
+}, 8000);
+
+setTimeout(() => {
+	spinner.prefixText = '';
+	spinner.suffixText = chalk.dim('[info]');
+	spinner.text = 'Loading with suffix text';
+}, 10_000);
+
+setTimeout(() => {
+	spinner.prefixText = chalk.dim('[info]');
+	spinner.suffixText = chalk.dim('[info]');
+	spinner.text = 'Loading with prefix and suffix text';
+}, 12_000);
+
+setTimeout(() => {
+	spinner.stopAndPersist({
+		prefixText: '',
+		suffixText: '',
+		symbol: logSymbols.info,
+		text: 'Stopping with different text!',
+	});
+}, 14_000);
 
 // $ node example.js nameOfSpinner
