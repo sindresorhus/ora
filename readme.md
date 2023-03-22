@@ -220,7 +220,7 @@ Symbol to replace the spinner with.
 Type: `string`\
 Default: Current `'text'`
 
-Text to be persisted after the symbol
+Text to be persisted after the symbol.
 
 ###### prefixText
 
