@@ -24,6 +24,7 @@ class Ora {
 	#indent;
 	#text;
 	#prefixText;
+	#suffixText;
 
 	color;
 
@@ -57,6 +58,7 @@ class Ora {
 		// It's important that these use the public setters.
 		this.text = this.#options.text;
 		this.prefixText = this.#options.prefixText;
+		this.suffixText = this.#options.suffixText;
 		this.indent = this.#options.indent;
 
 		if (process.env.NODE_ENV === 'test') {
@@ -147,6 +149,15 @@ class Ora {
 		this.updateLineCount();
 	}
 
+	get suffixText() {
+		return this.#suffixText;
+	}
+
+	set suffixText(value) {
+		this.#suffixText = value || '';
+		this.updateLineCount();
+	}
+
 	get isSpinning() {
 		return this.#id !== undefined;
 	}
@@ -164,12 +175,26 @@ class Ora {
 		return '';
 	}
 
+	getFullSuffixText(suffixText = this.#suffixText, prefix = ' ') {
+		if (typeof suffixText === 'string' && suffixText !== '') {
+			return prefix + suffixText;
+		}
+
+		if (typeof suffixText === 'function') {
+			return prefix + suffixText();
+		}
+
+		return '';
+	}
+
 	updateLineCount() {
 		const columns = this.#stream.columns || 80;
 		const fullPrefixText = this.getFullPrefixText(this.#prefixText, '-');
+		const fullSuffixText = this.getFullSuffixText(this.#suffixText, '-');
+		const fullText = ' '.repeat(this.#indent) + fullPrefixText + '--' + this.#text + '--' + fullSuffixText;
 
 		this.#lineCount = 0;
-		for (const line of stripAnsi(' '.repeat(this.#indent) + fullPrefixText + '--' + this.#text).split('\n')) {
+		for (const line of stripAnsi(fullText).split('\n')) {
 			this.#lineCount += Math.max(1, Math.ceil(wcwidth(line) / columns));
 		}
 	}
@@ -209,8 +234,9 @@ class Ora {
 		this.#frameIndex = ++this.#frameIndex % frames.length;
 		const fullPrefixText = (typeof this.#prefixText === 'string' && this.#prefixText !== '') ? this.#prefixText + ' ' : '';
 		const fullText = typeof this.text === 'string' ? ' ' + this.text : '';
+		const fullSuffixText = (typeof this.#suffixText === 'string' && this.#suffixText !== '') ? ' ' + this.#suffixText : '';
 
-		return fullPrefixText + frame + fullText;
+		return fullPrefixText + frame + fullText + fullSuffixText;
 	}
 
 	clear() {
@@ -328,12 +354,21 @@ class Ora {
 			return this;
 		}
 
-		const prefixText = options.prefixText || this.#prefixText;
-		const text = options.text || this.text;
+		const prefixText = options.prefixText ?? this.#prefixText;
+		const fullPrefixText = this.getFullPrefixText(prefixText, ' ');
+
+		const symbolText = options.symbol ?? ' ';
+
+		const text = options.text ?? this.text;
 		const fullText = (typeof text === 'string') ? ' ' + text : '';
 
+		const suffixText = options.suffixText ?? this.#suffixText;
+		const fullSuffixText = this.getFullSuffixText(suffixText, ' ');
+
+		const textToWrite = fullPrefixText + symbolText + fullText + fullSuffixText + '\n';
+
 		this.stop();
-		this.#stream.write(`${this.getFullPrefixText(prefixText, ' ')}${options.symbol || ' '}${fullText}\n`);
+		this.#stream.write(textToWrite);
 
 		return this;
 	}

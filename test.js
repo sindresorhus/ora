@@ -240,6 +240,16 @@ test('erases wrapped lines', t => {
 	t.is(clearedLines, 3); // Cleared 'foo\n\nbar'
 	t.is(cursorAtRow, -2);
 
+	spinner.clear();
+	reset();
+	spinner.prefixText = 'foo\n';
+	spinner.text = '\nbar';
+	spinner.suffixText = '\nbaz';
+	spinner.render();
+	spinner.render();
+	t.is(clearedLines, 4); // Cleared 'foo\n\nbar \nbaz'
+	t.is(cursorAtRow, -3);
+
 	spinner.stop();
 });
 
@@ -398,6 +408,30 @@ test('.stopAndPersist() with manual empty prefixText', macro, spinner => {
 test('.stopAndPersist() with dynamic prefixText', macro, spinner => {
 	spinner.stopAndPersist({symbol: '&', prefixText: () => 'babeee', text: 'yorkie'});
 }, /babeee & yorkie\n$/, {prefixText: () => 'babeee'});
+
+test('.stopAndPersist() with suffixText', macro, spinner => {
+	spinner.stopAndPersist({symbol: '@', text: 'foo'});
+}, /@ foo bar\n$/, {suffixText: 'bar'});
+
+test('.stopAndPersist() with empty suffixText', macro, spinner => {
+	spinner.stopAndPersist({symbol: '@', text: 'foo'});
+}, /@ foo\n$/, {suffixText: ''});
+
+test('.stopAndPersist() with manual suffixText', macro, spinner => {
+	spinner.stopAndPersist({symbol: '@', suffixText: 'baz', text: 'foo'});
+}, /@ foo baz\n$/, {suffixText: 'bar'});
+
+test('.stopAndPersist() with manual empty suffixText', macro, spinner => {
+	spinner.stopAndPersist({symbol: '@', suffixText: '', text: 'foo'});
+}, /@ foo\n$/, {suffixText: 'bar'});
+
+test('.stopAndPersist() with dynamic suffixText', macro, spinner => {
+	spinner.stopAndPersist({symbol: '&', suffixText: () => 'babeee', text: 'yorkie'});
+}, /& yorkie babeee\n$/, {suffixText: () => 'babeee'});
+
+test('.stopAndPersist() with prefixText and suffixText', macro, spinner => {
+	spinner.stopAndPersist({symbol: '@', text: 'foo'});
+}, /bar @ foo baz\n$/, {prefixText: 'bar', suffixText: 'baz'});
 
 // New clear method tests
 
@@ -597,21 +631,23 @@ test('new clear method test, erases wrapped lines', t => {
 	currentOra.clear();
 	currentOra.prefixText = 'foo\n';
 	currentOra.text = '\nbar';
+	currentOra.suffixText = '\nbaz';
 	currentOra.render();
 	currentOra.render();
 
 	spinner.clear();
 	spinner.prefixText = 'foo\n';
 	spinner.text = '\nbar';
+	spinner.suffixText = '\nbaz';
 	spinner.render();
 	spinner.render();
-	t.is(clearedLines(), 3); // Cleared 'foo\n\nbar'
-	t.is(cursorAtRow(), -2);
+	t.is(clearedLines(), 4); // Cleared 'foo\n\nbar \nbaz'
+	t.is(cursorAtRow(), -3);
 
 	const [sequenceString, clearedSequenceString] = transformTTY.getSequenceStrings();
 	const [frames, clearedFrames] = transformTTY.getFrames();
 
-	t.is(sequenceString, 'foo\n - \nbar');
+	t.is(sequenceString, 'foo\n - \nbar \nbaz');
 	t.is(sequenceString, clearedSequenceString);
 
 	t.deepEqual(clearedFrames, [
@@ -631,14 +667,14 @@ test('new clear method test, erases wrapped lines', t => {
 		'- 🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄\n'
 			+ '🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄\n'
 			+ 'foo',
-		'foo\n - \nbar',
-		'foo\n - \nbar',
+		'foo\n - \nbar \nbaz',
+		'foo\n - \nbar \nbaz',
 	]);
 
 	t.deepEqual(frames, clearedFrames);
 
 	const currentClearString = currentClearTTY.toString();
-	t.is(currentClearString, 'foo\n - \nbar');
+	t.is(currentClearString, 'foo\n - \nbar \nbaz');
 
 	const currentFrames = currentClearTTY.getFrames();
 	t.deepEqual(frames, currentFrames);
