@@ -1,9 +1,9 @@
-import {SpinnerName} from 'cli-spinners';
+import {type SpinnerName} from 'cli-spinners';
 
-export interface Spinner {
+export type Spinner = {
 	readonly interval?: number;
 	readonly frames: string[];
-}
+};
 
 export type Color =
 	| 'black'
@@ -20,7 +20,7 @@ export type PrefixTextGenerator = () => string;
 
 export type SuffixTextGenerator = () => string;
 
-export interface Options {
+export type Options = {
 	/**
 	Text to display after the spinner.
 	*/
@@ -114,9 +114,9 @@ export interface Options {
 	@default true
 	*/
 	readonly discardStdin?: boolean;
-}
+};
 
-export interface PersistOptions {
+export type PersistOptions = {
 	/**
 	Symbol to replace the spinner with.
 
@@ -144,9 +144,9 @@ export interface PersistOptions {
 	Default: Current `suffixText`.
 	*/
 	readonly suffixText?: string | SuffixTextGenerator;
-}
+};
 
-export interface PromiseOptions<T> extends Options {
+export type PromiseOptions<T> = {
 	/**
 	The new text of the spinner when the promise is resolved.
 
@@ -160,8 +160,9 @@ export interface PromiseOptions<T> extends Options {
 	Keeps the existing text if `undefined`.
 	*/
 	failText?: string | ((error: Error) => string) | undefined;
-}
+} & Options;
 
+// eslint-disable-next-line @typescript-eslint/consistent-type-definitions
 export interface Ora {
 	/**
 	Change the text after the spinner.

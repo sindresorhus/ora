@@ -4,7 +4,7 @@ import cliCursor from 'cli-cursor';
 import cliSpinners from 'cli-spinners';
 import logSymbols from 'log-symbols';
 import stripAnsi from 'strip-ansi';
-import wcwidth from 'wcwidth';
+import stringWidth from 'string-width';
 import isInteractive from 'is-interactive';
 import isUnicodeSupported from 'is-unicode-supported';
 import stdinDiscarder from 'stdin-discarder';
@@ -98,11 +98,11 @@ class Ora {
 		}
 
 		this.#indent = indent;
-		this.updateLineCount();
+		this.#updateLineCount();
 	}
 
 	get interval() {
-		return this.#initialInterval || this.#spinner.interval || 100;
+		return this.#initialInterval ?? this.#spinner.interval ?? 100;
 	}
 
 	get spinner() {
@@ -135,35 +135,34 @@ class Ora {
 		return this.#text;
 	}
 
-	set text(value) {
-		this.#text = value || '';
-		this.updateLineCount();
+	set text(value = '') {
+		this.#text = value;
+		this.#updateLineCount();
 	}
 
 	get prefixText() {
 		return this.#prefixText;
 	}
 
-	set prefixText(value) {
-		this.#prefixText = value || '';
-		this.updateLineCount();
+	set prefixText(value = '') {
+		this.#prefixText = value;
+		this.#updateLineCount();
 	}
 
 	get suffixText() {
 		return this.#suffixText;
 	}
 
-	set suffixText(value) {
-		this.#suffixText = value || '';
-		this.updateLineCount();
+	set suffixText(value = '') {
+		this.#suffixText = value;
+		this.#updateLineCount();
 	}
 
 	get isSpinning() {
 		return this.#id !== undefined;
 	}
 
-	// TODO: Use private methods when targeting Node.js 14.
-	getFullPrefixText(prefixText = this.#prefixText, postfix = ' ') {
+	#getFullPrefixText(prefixText = this.#prefixText, postfix = ' ') {
 		if (typeof prefixText === 'string' && prefixText !== '') {
 			return prefixText + postfix;
 		}
@@ -175,7 +174,7 @@ class Ora {
 		return '';
 	}
 
-	getFullSuffixText(suffixText = this.#suffixText, prefix = ' ') {
+	#getFullSuffixText(suffixText = this.#suffixText, prefix = ' ') {
 		if (typeof suffixText === 'string' && suffixText !== '') {
 			return prefix + suffixText;
 		}
@@ -187,15 +186,15 @@ class Ora {
 		return '';
 	}
 
-	updateLineCount() {
-		const columns = this.#stream.columns || 80;
-		const fullPrefixText = this.getFullPrefixText(this.#prefixText, '-');
-		const fullSuffixText = this.getFullSuffixText(this.#suffixText, '-');
+	#updateLineCount() {
+		const columns = this.#stream.columns ?? 80;
+		const fullPrefixText = this.#getFullPrefixText(this.#prefixText, '-');
+		const fullSuffixText = this.#getFullSuffixText(this.#suffixText, '-');
 		const fullText = ' '.repeat(this.#indent) + fullPrefixText + '--' + this.#text + '--' + fullSuffixText;
 
 		this.#lineCount = 0;
 		for (const line of stripAnsi(fullText).split('\n')) {
-			this.#lineCount += Math.max(1, Math.ceil(wcwidth(line) / columns));
+			this.#lineCount += Math.max(1, Math.ceil(stringWidth(line, {countAnsiEscapeCodes: true}) / columns));
 		}
 	}
 
@@ -354,16 +353,16 @@ class Ora {
 			return this;
 		}
 
-		const prefixText = options.prefixText || this.#prefixText;
-		const fullPrefixText = this.getFullPrefixText(prefixText, ' ');
+		const prefixText = options.prefixText ?? this.#prefixText;
+		const fullPrefixText = this.#getFullPrefixText(prefixText, ' ');
 
-		const symbolText = options.symbol || ' ';
+		const symbolText = options.symbol ?? ' ';
 
-		const text = options.text || this.text;
+		const text = options.text ?? this.text;
 		const fullText = (typeof text === 'string') ? ' ' + text : '';
 
-		const suffixText = options.suffixText !== undefined ? options.suffixText : this.#suffixText;
-		const fullSuffixText = this.getFullSuffixText(suffixText, ' ');
+		const suffixText = options.suffixText ?? this.#suffixText;
+		const fullSuffixText = this.#getFullSuffixText(suffixText, ' ');
 
 		const textToWrite = fullPrefixText + symbolText + fullText + fullSuffixText + '\n';
 

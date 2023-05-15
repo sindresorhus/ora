@@ -1,6 +1,6 @@
 import {PassThrough as PassThroughStream} from 'node:stream';
 import {expectType} from 'tsd';
-import cliSpinners from 'cli-spinners';
+import type cliSpinners from 'cli-spinners';
 import ora, {oraPromise, spinners} from './index.js';
 
 const spinner = ora('Loading unicorns');
