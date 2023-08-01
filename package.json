@@ -46,6 +46,7 @@
 		"is-unicode-supported": "^1.3.0",
 		"log-symbols": "^5.1.0",
 		"stdin-discarder": "^0.1.0",
+		"string-width": "^6.1.0",
 		"strip-ansi": "^7.1.0"
 	},
 	"devDependencies": {
