@@ -49,7 +49,7 @@
 		"is-interactive": "^2.0.0",
 		"is-unicode-supported": "^2.0.0",
 		"log-symbols": "^6.0.0",
-		"stdin-discarder": "^0.2.0",
+		"stdin-discarder": "^0.2.1",
 		"string-width": "^7.0.0",
 		"strip-ansi": "^7.1.0"
 	},
