@@ -25,7 +25,6 @@ class Ora {
 	#text;
 	#prefixText;
 	#suffixText;
-
 	color;
 
 	constructor(options) {

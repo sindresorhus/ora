@@ -14,6 +14,8 @@
 npm install ora
 ```
 
+*Check out [`yocto-spinner`](https://github.com/sindresorhus/yocto-spinner) for a smaller alternative.*
+
 ## Usage
 
 ```js
@@ -42,7 +44,7 @@ Type: `object`
 
 Type: `string`
 
-Text to display after the spinner.
+The text to display next to the spinner.
 
 ##### prefixText
 
@@ -61,14 +63,14 @@ Text or a function that returns text to display after the spinner text. No suffi
 Type: `string | object`\
 Default: `'dots'` <img src="screenshot-spinner.gif" width="14">
 
-Name of one of the [provided spinners](#spinners). See `example.js` in this repo if you want to test out different spinners. On Windows, it will always use the `line` spinner as the Windows command-line doesn't have proper Unicode support.
+The name of one of the [provided spinners](#spinners). See `example.js` in this repo if you want to test out different spinners. On Windows (except for Windows Terminal), it will always use the `line` spinner as the Windows command-line doesn't have proper Unicode support.
 
 Or an object like:
 
 ```js
 {
-	interval: 80, // Optional
-	frames: ['-', '+', '-']
+	frames: ['-', '+', '-'],
+	interval: 80 // Optional
 }
 ```
 
@@ -140,7 +142,7 @@ This has no effect on Windows as there is no good way to implement discarding st
 
 #### .text <sup>get/set</sup>
 
-Change the text after the spinner.
+Change the text displayed after the spinner.
 
 #### .prefixText <sup>get/set</sup>
 
@@ -168,7 +170,7 @@ Change the spinner indent.
 
 #### .isSpinning <sup>get</sup>
 
-A boolean of whether the instance is currently spinning.
+A boolean indicating whether the instance is currently spinning.
 
 #### .interval <sup>get</sup>
 
@@ -224,17 +226,17 @@ Text to be persisted after the symbol.
 
 ###### prefixText
 
-Type: `string`\
+Type: `string | () => string`\
 Default: Current `prefixText`
 
-Text to be persisted before the symbol. No prefix text will be displayed if set to an empty string.
+Text or a function that returns text to be persisted before the symbol. No prefix text will be displayed if set to an empty string.
 
 ###### suffixText
 
-Type: `string`\
+Type: `string | () => string`\
 Default: Current `suffixText`
 
-Text to be persisted after the text after the symbol. No suffix text will be displayed if set to an empty string.
+Text or a function that returns text to be persisted after the text after the symbol. No suffix text will be displayed if set to an empty string.
 
 <img src="screenshot-2.gif" width="480">
 
@@ -297,7 +299,7 @@ All [provided spinners](https://github.com/sindresorhus/cli-spinners/blob/main/s
 
 ### How do I change the color of the text?
 
-Use [Chalk](https://github.com/chalk/chalk):
+Use [`chalk`](https://github.com/chalk/chalk) or [`yoctocolors`](https://github.com/sindresorhus/yoctocolors):
 
 ```js
 import ora from 'ora';
@@ -308,12 +310,15 @@ const spinner = ora(`Loading ${chalk.red('unicorns')}`).start();
 
 ### Why does the spinner freeze?
 
-JavaScript is single-threaded, so synchronous operations blocks the thread, including the spinner animation. Prefer asynchronous operations whenever possible.
+JavaScript is single-threaded, so any synchronous operations will block the spinner's animation. To avoid this, prefer using asynchronous operations.
 
 ## Related
 
+- [yocto-spinner](https://github.com/sindresorhus/yocto-spinner) - Tiny terminal spinner
 - [cli-spinners](https://github.com/sindresorhus/cli-spinners) - Spinners for use in the terminal
-- [listr](https://github.com/SamVerschueren/listr) - Terminal task list
+
+**Ports**
+
 - [CLISpinner](https://github.com/kiliankoe/CLISpinner) - Terminal spinner library for Swift
 - [halo](https://github.com/ManrajGrover/halo) - Python port
 - [spinners](https://github.com/FGRibreau/spinners) - Terminal spinners for Rust
@@ -321,5 +326,4 @@ JavaScript is single-threaded, so synchronous operations blocks the thread, incl
 - [briandowns/spinner](https://github.com/briandowns/spinner) - Terminal spinner/progress indicator for Go
 - [tj/go-spin](https://github.com/tj/go-spin) - Terminal spinner package for Go
 - [observablehq.com/@victordidenko/ora](https://observablehq.com/@victordidenko/ora) - Ora port to Observable notebooks
-- [spinnies](https://github.com/jcarpanelli/spinnies) - Terminal multi-spinner library for Node.js
 - [kia](https://github.com/HarryPeach/kia) - Simple terminal spinners for Deno 🦕

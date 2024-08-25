@@ -22,7 +22,7 @@ export type SuffixTextGenerator = () => string;
 
 export type Options = {
 	/**
-	Text to display after the spinner.
+	The text to display next to the spinner.
 	*/
 	readonly text?: string;
 
@@ -37,7 +37,7 @@ export type Options = {
 	readonly suffixText?: string | SuffixTextGenerator;
 
 	/**
-	Name of one of the provided spinners. See [`example.js`](https://github.com/BendingBender/ora/blob/main/example.js) in this repo if you want to test out different spinners. On Windows, it will always use the line spinner as the Windows command-line doesn't have proper Unicode support.
+	The name of one of the provided spinners. See [`example.js`](https://github.com/BendingBender/ora/blob/main/example.js) in this repo if you want to test out different spinners. On Windows (expect for Windows Terminal), it will always use the line spinner as the Windows command-line doesn't have proper Unicode support.
 
 	@default 'dots'
 
@@ -46,8 +46,8 @@ export type Options = {
 	@example
 	```
 	{
-		interval: 80, // Optional
-		frames: ['-', '+', '-']
+		frames: ['-', '+', '-'],
+		interval: 80 // Optional
 	}
 	```
 	*/
@@ -204,7 +204,7 @@ export interface Ora {
 	set spinner(spinner: SpinnerName | Spinner);
 
 	/**
-	A boolean of whether the instance is currently spinning.
+	A boolean indicating whether the instance is currently spinning.
 	*/
 	get isSpinning(): boolean;
 

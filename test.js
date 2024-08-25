@@ -17,7 +17,7 @@ const getPassThroughStream = () => {
 	return stream;
 };
 
-const doSpinner = async (fn, extraOptions = {}) => {
+const doSpinner = async (function_, extraOptions = {}) => {
 	const stream = getPassThroughStream();
 	const output = getStream(stream);
 
@@ -31,14 +31,14 @@ const doSpinner = async (fn, extraOptions = {}) => {
 	});
 
 	spinner.start();
-	fn(spinner);
+	function_(spinner);
 	stream.end();
 
 	return stripAnsi(await output);
 };
 
-const macro = async (t, fn, expected, extraOptions = {}) => {
-	t.regex(await doSpinner(fn, extraOptions), expected);
+const macro = async (t, function_, expected, extraOptions = {}) => {
+	t.regex(await doSpinner(function_, extraOptions), expected);
 };
 
 test('main', macro, spinner => {
