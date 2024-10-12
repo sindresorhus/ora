@@ -13,7 +13,8 @@ class Ora {
 	#linesToClear = 0;
 	#isDiscardingStdin = false;
 	#lineCount = 0;
-	#frameIndex = 0;
+	#frameIndex = -1;
+	#lastSpinnerFrameTime = 0;
 	#options;
 	#spinner;
 	#stream;
@@ -109,7 +110,7 @@ class Ora {
 	}
 
 	set spinner(spinner) {
-		this.#frameIndex = 0;
+		this.#frameIndex = -1;
 		this.#initialInterval = undefined;
 
 		if (typeof spinner === 'object') {
@@ -222,6 +223,14 @@ class Ora {
 	}
 
 	frame() {
+		// Ensure we only update the spinner frame at the wanted interval,
+		// even if the render method is called more often.
+		const now = Date.now();
+		if (this.#frameIndex === -1 || now - this.#lastSpinnerFrameTime >= this.interval) {
+			this.#frameIndex = ++this.#frameIndex % this.#spinner.frames.length;
+			this.#lastSpinnerFrameTime = now;
+		}
+
 		const {frames} = this.#spinner;
 		let frame = frames[this.#frameIndex];
 
@@ -229,7 +238,6 @@ class Ora {
 			frame = chalk[this.color](frame);
 		}
 
-		this.#frameIndex = ++this.#frameIndex % frames.length;
 		const fullPrefixText = (typeof this.#prefixText === 'string' && this.#prefixText !== '') ? this.#prefixText + ' ' : '';
 		const fullText = typeof this.text === 'string' ? ' ' + this.text : '';
 		const fullSuffixText = (typeof this.#suffixText === 'string' && this.#suffixText !== '') ? ' ' + this.#suffixText : '';

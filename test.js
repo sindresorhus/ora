@@ -267,8 +267,10 @@ test('reset frameIndex when setting new spinner', async t => {
 		},
 	});
 
+	t.is(spinner._frameIndex, -1);
+
 	spinner.render();
-	t.is(spinner._frameIndex, 1);
+	t.is(spinner._frameIndex, 0);
 
 	spinner.spinner = {frames: ['baz']};
 	spinner.render();
