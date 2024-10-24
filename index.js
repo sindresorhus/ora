@@ -34,6 +34,10 @@ class Ora {
 			};
 		}
 
+		if (options?.stream && typeof options.stream.write !== 'function') {
+			throw new TypeError('Stream must be a writable stream');
+		}
+
 		this.#options = {
 			color: 'cyan',
 			stream: process.stderr,
