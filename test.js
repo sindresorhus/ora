@@ -679,6 +679,16 @@ test('new clear method test, erases wrapped lines', t => {
 	t.deepEqual(frames, currentFrames);
 });
 
+test('should throw TypeError when a non-writable stream is passed', t => {
+	const nonWritableStream = {};
+
+	const error = t.throws(_ => ora({stream: nonWritableStream}), {
+		instanceOf: TypeError,
+	});
+
+	t.is(error.message, 'Stream must be a writable stream');
+});
+
 test('new clear method, stress test', t => {
 	const rando = (min, max) => {
 		min = Math.ceil(min);
