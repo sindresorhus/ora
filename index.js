@@ -358,7 +358,8 @@ class Ora {
 		const symbolText = options.symbol ?? ' ';
 
 		const text = options.text ?? this.text;
-		const fullText = (typeof text === 'string') ? ' ' + text : '';
+		const separatorText = symbolText ? ' ' : '';
+		const fullText = (typeof text === 'string') ? separatorText + text : '';
 
 		const suffixText = options.suffixText ?? this.#suffixText;
 		const fullSuffixText = this.#getFullSuffixText(suffixText, ' ');
