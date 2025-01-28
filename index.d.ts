@@ -186,7 +186,7 @@ export interface Ora {
 	/**
 	Change the spinner color.
 	*/
-	color: Color;
+	color: Color | boolean;
 
 	/**
 	Change the spinner indent.
