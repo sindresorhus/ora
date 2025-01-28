@@ -58,7 +58,7 @@ export type Options = {
 
 	@default 'cyan'
 	*/
-	readonly color?: Color;
+	readonly color?: Color | boolean;
 
 	/**
 	Set to `false` to stop Ora from hiding the cursor.
