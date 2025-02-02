@@ -78,7 +78,7 @@ Or an object like:
 
 Type: `string | boolean`\
 Default: `'cyan'`\
-Values: `'black' | 'red' | 'green' | 'yellow' | 'blue' | 'magenta' | 'cyan' | 'white' | 'gray' | false`
+Values: `'black' | 'red' | 'green' | 'yellow' | 'blue' | 'magenta' | 'cyan' | 'white' | 'gray' | boolean`
 
 The color of the spinner.
 
