@@ -983,3 +983,27 @@ Example output:
   ... 1 more item
 ]
 */
+
+const colors = [
+	'black',
+	'red',
+	'green',
+	'yellow',
+	'blue',
+	'magenta',
+	'cyan',
+	'white',
+	'gray',
+];
+
+test('does not crash with any of available colors', t => {
+	for (const color of colors) {
+		t.notThrows(() => {
+			const spinner = ora({color});
+
+			spinner.render();
+			spinner.clear();
+			spinner.stop();
+		});
+	}
+});

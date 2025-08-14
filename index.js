@@ -1,5 +1,5 @@
 import process from 'node:process';
-import chalk from 'chalk';
+import pc from 'picocolors';
 import cliCursor from 'cli-cursor';
 import cliSpinners from 'cli-spinners';
 import logSymbols from 'log-symbols';
@@ -235,7 +235,7 @@ class Ora {
 		let frame = frames[this.#frameIndex];
 
 		if (this.color) {
-			frame = chalk[this.color](frame);
+			frame = pc[this.color](frame);
 		}
 
 		const fullPrefixText = (typeof this.#prefixText === 'string' && this.#prefixText !== '') ? this.#prefixText + ' ' : '';

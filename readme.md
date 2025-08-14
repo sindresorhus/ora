@@ -299,13 +299,22 @@ All [provided spinners](https://github.com/sindresorhus/cli-spinners/blob/main/s
 
 ### How do I change the color of the text?
 
-Use [`chalk`](https://github.com/chalk/chalk) or [`yoctocolors`](https://github.com/sindresorhus/yoctocolors):
+If you use Node.js v20.12.0 or later, use the built-in [`util.styleText`](https://nodejs.org/api/util.html#utilstyletextformat-text-options):
+
+```js
+import { styleText } from 'node:util';
+import ora from 'ora';
+
+const spinner = ora(`Loading ${styleText('red', 'unicorns')}`).start();
+```
+
+On older versions of Node.js, use [`picocolors`](https://github.com/alexeyraspopov/picocolors), [`chalk`](https://github.com/chalk/chalk), or [`yoctocolors`](https://github.com/sindresorhus/yoctocolors):
 
 ```js
 import ora from 'ora';
-import chalk from 'chalk';
+import pc from 'picocolors';
 
-const spinner = ora(`Loading ${chalk.red('unicorns')}`).start();
+const spinner = ora(`Loading ${pc.red('unicorns')}`).start();
 ```
 
 ### Why does the spinner freeze?

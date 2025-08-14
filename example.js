@@ -1,5 +1,5 @@
 import process from 'node:process';
-import chalk from 'chalk';
+import pc from 'picocolors';
 import logSymbols from 'log-symbols';
 import ora from './index.js';
 
@@ -31,7 +31,7 @@ setTimeout(() => {
 
 setTimeout(() => {
 	spinner.color = 'yellow';
-	spinner.text = `Loading ${chalk.red('rainbows')}`;
+	spinner.text = `Loading ${pc.red('rainbows')}`;
 }, 4000);
 
 setTimeout(() => {
@@ -47,20 +47,20 @@ setTimeout(() => {
 }, 6000);
 
 setTimeout(() => {
-	spinner.prefixText = chalk.dim('[info]');
+	spinner.prefixText = pc.dim('[info]');
 	spinner.spinner = 'dots';
 	spinner.text = 'Loading with prefix text';
 }, 8000);
 
 setTimeout(() => {
 	spinner.prefixText = '';
-	spinner.suffixText = chalk.dim('[info]');
+	spinner.suffixText = pc.dim('[info]');
 	spinner.text = 'Loading with suffix text';
 }, 10_000);
 
 setTimeout(() => {
-	spinner.prefixText = chalk.dim('[info]');
-	spinner.suffixText = chalk.dim('[info]');
+	spinner.prefixText = pc.dim('[info]');
+	spinner.suffixText = pc.dim('[info]');
 	spinner.text = 'Loading with prefix and suffix text';
 }, 12_000);
 

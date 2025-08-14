@@ -43,12 +43,12 @@
 		"idle"
 	],
 	"dependencies": {
-		"chalk": "^5.3.0",
 		"cli-cursor": "^5.0.0",
 		"cli-spinners": "^2.9.2",
 		"is-interactive": "^2.0.0",
 		"is-unicode-supported": "^2.0.0",
 		"log-symbols": "^6.0.0",
+		"picocolors": "^1.1.1",
 		"stdin-discarder": "^0.2.2",
 		"string-width": "^7.2.0",
 		"strip-ansi": "^7.1.0"
