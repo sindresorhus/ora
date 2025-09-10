@@ -983,3 +983,140 @@ Example output:
   ... 1 more item
 ]
 */
+
+test('multiline text exceeding console height', t => {
+	// Create a mock stream with limited height
+	const stream = getPassThroughStream();
+	stream.rows = 5; // Simulate a console with 5 rows
+	stream.columns = 80;
+	stream.isTTY = true;
+
+	let writtenContent = '';
+
+	// Override write to capture content
+	const originalWrite = stream.write;
+	stream.write = function (content) {
+		writtenContent = content;
+		return originalWrite.call(this, content);
+	};
+
+	const spinner = ora({
+		stream,
+		text: Array.from({length: 10}, (_, i) => `Line ${i + 1}`).join('\n'), // 10 lines (exceeds 5 row height)
+		color: false,
+		isEnabled: true,
+	});
+
+	spinner.start();
+	spinner.render(); // Force a render
+
+	// When content exceeds viewport, should truncate with message
+	t.true(writtenContent.includes('Line 1'), 'Should include some original content');
+	t.true(writtenContent.includes('(content truncated to fit terminal)'), 'Should show truncation message');
+
+	// Should not include all 10 lines
+	const lineCount = (writtenContent.match(/Line \d+/g) || []).length;
+	t.true(lineCount < 10, 'Should truncate some lines');
+	t.true(lineCount <= 5, 'Should not exceed terminal height');
+
+	spinner.stop();
+});
+
+test('multiline text within console height', t => {
+	// Create a mock stream with sufficient height
+	const stream = getPassThroughStream();
+	stream.rows = 10; // Simulate a console with 10 rows
+	stream.columns = 80;
+	stream.isTTY = true;
+
+	let writtenContent = '';
+
+	// Override write to capture content
+	const originalWrite = stream.write;
+	stream.write = function (content) {
+		writtenContent = content;
+		return originalWrite.call(this, content);
+	};
+
+	const spinner = ora({
+		stream,
+		text: Array.from({length: 5}, (_, i) => `Line ${i + 1}`).join('\n'), // 5 lines (within 10 row height)
+		color: false,
+		isEnabled: true,
+	});
+
+	spinner.start();
+	spinner.render();
+
+	// When content is within viewport, should not truncate
+	t.true(writtenContent.includes('Line 1'), 'Should include first line');
+	t.true(writtenContent.includes('Line 5'), 'Should include last line');
+	t.false(writtenContent.includes('(content truncated to fit terminal)'), 'Should not show truncation message');
+
+	spinner.stop();
+});
+
+test('multiline text with undefined terminal rows', t => {
+	// Test fallback behavior when stream.rows is undefined
+	const stream = getPassThroughStream();
+	delete stream.rows; // Ensure rows is undefined
+	stream.columns = 80;
+	stream.isTTY = true;
+
+	let writtenContent = '';
+
+	// Override write to capture content
+	const originalWrite = stream.write;
+	stream.write = function (content) {
+		writtenContent = content;
+		return originalWrite.call(this, content);
+	};
+
+	const spinner = ora({
+		stream,
+		text: Array.from({length: 10}, (_, i) => `Line ${i + 1}`).join('\n'),
+		color: false,
+		isEnabled: true,
+	});
+
+	spinner.start();
+	spinner.render();
+
+	// When terminal height is unknown, should not truncate (no truncation applied)
+	t.true(writtenContent.includes('Line 1'), 'Should include first line');
+	t.true(writtenContent.includes('Line 10'), 'Should include last line');
+	t.false(writtenContent.includes('(content truncated to fit terminal)'), 'Should not truncate when height is unknown');
+
+	spinner.stop();
+});
+
+test('multiline text with very small console height', t => {
+	// Test edge case: console height = 1 (should not truncate since no room for message)
+	const stream = getPassThroughStream();
+	stream.rows = 1;
+	stream.columns = 80;
+	stream.isTTY = true;
+
+	let writtenContent = '';
+	const originalWrite = stream.write;
+	stream.write = function (content) {
+		writtenContent = content;
+		return originalWrite.call(this, content);
+	};
+
+	const spinner = ora({
+		stream,
+		text: 'Line 1\nLine 2\nLine 3', // 3 lines (exceeds 1 row height)
+		color: false,
+		isEnabled: true,
+	});
+
+	spinner.start();
+	spinner.render();
+
+	// When console is too small (1 row), should not truncate because no room for message
+	t.true(writtenContent.includes('Line 1'), 'Should include content');
+	t.false(writtenContent.includes('(content truncated to fit terminal)'), 'Should not truncate when console too small for message');
+
+	spinner.stop();
+});

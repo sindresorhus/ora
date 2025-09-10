@@ -37,7 +37,7 @@ export type Options = {
 	readonly suffixText?: string | SuffixTextGenerator;
 
 	/**
-	The name of one of the provided spinners. See [`example.js`](https://github.com/BendingBender/ora/blob/main/example.js) in this repo if you want to test out different spinners. On Windows (expect for Windows Terminal), it will always use the line spinner as the Windows command-line doesn't have proper Unicode support.
+	The name of one of the provided spinners. See `example.js` in this repo if you want to test out different spinners. On Windows (except for Windows Terminal), it will always use the line spinner as the Windows command-line doesn't have proper Unicode support.
 
 	@default 'dots'
 

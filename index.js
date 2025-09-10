@@ -276,8 +276,21 @@ class Ora {
 		}
 
 		this.clear();
-		this.#stream.write(this.frame());
-		this.#linesToClear = this.#lineCount;
+
+		let frameContent = this.frame();
+		let actualLineCount = this.#lineCount;
+
+		// If content would exceed viewport height, truncate it to prevent garbage
+		const consoleHeight = this.#stream.rows;
+		if (consoleHeight && consoleHeight > 1 && this.#lineCount > consoleHeight) {
+			const lines = frameContent.split('\n');
+			const maxLines = consoleHeight - 1; // Reserve one line for truncation message
+			frameContent = [...lines.slice(0, maxLines), '... (content truncated to fit terminal)'].join('\n');
+			actualLineCount = maxLines + 1; // Truncated lines + message line
+		}
+
+		this.#stream.write(frameContent);
+		this.#linesToClear = actualLineCount;
 
 		return this;
 	}
