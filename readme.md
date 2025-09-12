@@ -312,6 +312,52 @@ const spinner = ora(`Loading ${chalk.red('unicorns')}`).start();
 
 JavaScript is single-threaded, so any synchronous operations will block the spinner's animation. To avoid this, prefer using asynchronous operations.
 
+### Can I display multiple spinners simultaneously?
+
+No. Ora is designed to display a single spinner at a time. For multiple concurrent progress indicators, consider alternatives like [listr2](https://github.com/listr2/listr2) or [spinnies](https://github.com/jcarpanelli/spinnies).
+
+### Can I use Ora with [log-update](https://github.com/sindresorhus/log-update)?
+
+Yes, use the `.frame()` method to get the current spinner frame and include it in your log-update output.
+
+### Does Ora work in Node.js Worker threads?
+
+No. Ora requires an interactive terminal environment and Worker threads are not considered interactive, so the spinner will not animate. Run the spinner in the main thread and control it via worker messages:
+
+```js
+// main.js
+import {Worker} from 'node:worker_threads';
+import ora from 'ora';
+
+const spinner = ora().start();
+const worker = new Worker('./worker.js');
+
+worker.on('message', message => {
+	switch (message.type) {
+		case 'ora:text':
+			spinner.text = message.text;
+			break;
+		case 'ora:succeed':
+			spinner.succeed(message.text);
+			break;
+		case 'ora:fail':
+			spinner.fail(message.text);
+			break;
+	}
+});
+```
+
+```js
+// worker.js
+import {parentPort} from 'node:worker_threads';
+
+parentPort.postMessage({type: 'ora:text', text: 'Working...'});
+
+// Do work...
+
+parentPort.postMessage({type: 'ora:succeed', text: 'Done!'});
+```
+
 ## Related
 
 - [yocto-spinner](https://github.com/sindresorhus/yocto-spinner) - Tiny terminal spinner
