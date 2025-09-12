@@ -188,8 +188,12 @@ class Ora {
 
 	#updateLineCount() {
 		const columns = this.#stream.columns ?? 80;
-		const fullPrefixText = this.#getFullPrefixText(this.#prefixText, '-');
-		const fullSuffixText = this.#getFullSuffixText(this.#suffixText, '-');
+
+		// Use simple approximations for line calculation to avoid calling functions
+		const prefixText = typeof this.#prefixText === 'function' ? '' : this.#prefixText;
+		const suffixText = typeof this.#suffixText === 'function' ? '' : this.#suffixText;
+		const fullPrefixText = (typeof prefixText === 'string' && prefixText !== '') ? prefixText + '-' : '';
+		const fullSuffixText = (typeof suffixText === 'string' && suffixText !== '') ? '-' + suffixText : '';
 		const fullText = ' '.repeat(this.#indent) + fullPrefixText + '--' + this.#text + '--' + fullSuffixText;
 
 		this.#lineCount = 0;
@@ -238,9 +242,9 @@ class Ora {
 			frame = chalk[this.color](frame);
 		}
 
-		const fullPrefixText = (typeof this.#prefixText === 'string' && this.#prefixText !== '') ? this.#prefixText + ' ' : '';
+		const fullPrefixText = this.#getFullPrefixText(this.#prefixText, ' ');
 		const fullText = typeof this.text === 'string' ? ' ' + this.text : '';
-		const fullSuffixText = (typeof this.#suffixText === 'string' && this.#suffixText !== '') ? ' ' + this.#suffixText : '';
+		const fullSuffixText = this.#getFullSuffixText(this.#suffixText, ' ');
 
 		return fullPrefixText + frame + fullText + fullSuffixText;
 	}

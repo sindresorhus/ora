@@ -1120,3 +1120,119 @@ test('multiline text with very small console height', t => {
 
 	spinner.stop();
 });
+
+test('frame() should display dynamic prefixText returned by function', t => {
+	let counter = 0;
+	const spinner = ora({
+		text: 'loading',
+		prefixText: () => `Step ${++counter}:`,
+		color: false,
+	});
+
+	const frame1 = spinner.frame();
+	const frame2 = spinner.frame();
+
+	t.true(frame1.includes('Step 1:'));
+	t.true(frame2.includes('Step 2:'));
+	t.not(frame1, frame2);
+});
+
+test('frame() should display dynamic suffixText returned by function', t => {
+	let counter = 0;
+	const spinner = ora({
+		text: 'loading',
+		suffixText: () => `(${++counter}%)`,
+		color: false,
+	});
+
+	const frame1 = spinner.frame();
+	const frame2 = spinner.frame();
+
+	t.true(frame1.includes('(1%)'));
+	t.true(frame2.includes('(2%)'));
+	t.not(frame1, frame2);
+});
+
+test('frame() should display both dynamic prefixText and suffixText from functions', t => {
+	let prefixCounter = 0;
+	let suffixCounter = 0;
+	const spinner = ora({
+		text: 'processing',
+		prefixText: () => `Batch ${++prefixCounter}:`,
+		suffixText: () => `[${++suffixCounter} items]`,
+		color: false,
+	});
+
+	const frame1 = spinner.frame();
+	const frame2 = spinner.frame();
+
+	t.true(frame1.includes('Batch 1:'));
+	t.true(frame1.includes('[1 items]'));
+	t.true(frame2.includes('Batch 2:'));
+	t.true(frame2.includes('[2 items]'));
+	t.not(frame1, frame2);
+});
+
+test('frame() should handle mixed static and dynamic text', t => {
+	let counter = 0;
+	const spinner = ora({
+		text: 'uploading',
+		prefixText: '[SERVER]',
+		suffixText: () => `${++counter}/10`,
+		color: false,
+	});
+
+	const frame1 = spinner.frame();
+	const frame2 = spinner.frame();
+
+	t.true(frame1.includes('[SERVER]'));
+	t.true(frame1.includes('1/10'));
+	t.true(frame2.includes('[SERVER]'));
+	t.true(frame2.includes('2/10'));
+});
+
+test('frame() should handle empty strings returned by functions', t => {
+	let callCount = 0;
+	const spinner = ora({
+		text: 'test',
+		prefixText() {
+			callCount++;
+			return callCount <= 1 ? '' : 'prefix';
+		},
+		suffixText: () => '',
+		color: false,
+	});
+
+	const frame1 = spinner.frame();
+	const frame2 = spinner.frame();
+
+	// First call returns empty string, should have no prefix
+	t.is(frame1.trim(), '⠋ test');
+	// Second call returns 'prefix', should include it
+	t.true(frame2.includes('prefix'));
+});
+
+test('frame() functions should only be called during frame() execution, not during construction', t => {
+	let constructorCalls = 0;
+
+	const spinner = ora({
+		text: 'test',
+		prefixText() {
+			constructorCalls++;
+			return `Called ${constructorCalls}`;
+		},
+		color: false,
+	});
+
+	// Functions should not be called during construction
+	t.is(constructorCalls, 0);
+
+	// Functions should be called when frame() is executed
+	const frame1 = spinner.frame();
+	t.is(constructorCalls, 1);
+	t.true(frame1.includes('Called 1'));
+
+	const frame2 = spinner.frame();
+	t.is(constructorCalls, 2);
+	t.true(frame2.includes('Called 2'));
+});
