@@ -115,8 +115,12 @@ class Ora {
 		this.#initialInterval = undefined;
 
 		if (typeof spinner === 'object') {
-			if (spinner.frames === undefined) {
-				throw new Error('The given spinner must have a `frames` property');
+			if (!Array.isArray(spinner.frames) || spinner.frames.length === 0 || spinner.frames.some(frame => typeof frame !== 'string')) {
+				throw new Error('The given spinner must have a non-empty `frames` array of strings');
+			}
+
+			if (spinner.interval !== undefined && !(Number.isInteger(spinner.interval) && spinner.interval > 0)) {
+				throw new Error('`spinner.interval` must be a positive integer if provided');
 			}
 
 			this.#spinner = spinner;
@@ -276,7 +280,7 @@ class Ora {
 	}
 
 	render() {
-		if (this.#isSilent) {
+		if (!this.#isEnabled || this.#isSilent) {
 			return this;
 		}
 
@@ -284,7 +288,7 @@ class Ora {
 
 		let frameContent = this.frame();
 		const columns = this.#stream.columns ?? 80;
-		let actualLineCount = this.#computeLineCountFrom(frameContent, columns);
+		const actualLineCount = this.#computeLineCountFrom(frameContent, columns);
 
 		// If content would exceed viewport height, truncate it to prevent garbage
 		const consoleHeight = this.#stream.rows;
@@ -292,11 +296,10 @@ class Ora {
 			const lines = frameContent.split('\n');
 			const maxLines = consoleHeight - 1; // Reserve one line for truncation message
 			frameContent = [...lines.slice(0, maxLines), '... (content truncated to fit terminal)'].join('\n');
-			actualLineCount = this.#computeLineCountFrom(frameContent, columns);
 		}
 
 		this.#stream.write(frameContent);
-		this.#linesToClear = actualLineCount;
+		this.#linesToClear = this.#computeLineCountFrom(frameContent, columns);
 
 		return this;
 	}
@@ -311,8 +314,10 @@ class Ora {
 		}
 
 		if (!this.#isEnabled) {
-			if (this.text) {
-				this.#stream.write(`- ${this.text}\n`);
+			const line = ' '.repeat(this.#indent) + this.#getFullPrefixText(this.#prefixText, ' ') + (this.text ? `- ${this.text}` : '') + this.#getFullSuffixText(this.#suffixText, ' ');
+
+			if (line.trim() !== '') {
+				this.#stream.write(line + '\n');
 			}
 
 			return this;
@@ -338,16 +343,15 @@ class Ora {
 	}
 
 	stop() {
-		if (!this.#isEnabled) {
-			return this;
-		}
-
 		clearInterval(this.#id);
 		this.#id = undefined;
 		this.#frameIndex = 0;
-		this.clear();
-		if (this.#options.hideCursor) {
-			cliCursor.show(this.#stream);
+
+		if (this.#isEnabled) {
+			this.clear();
+			if (this.#options.hideCursor) {
+				cliCursor.show(this.#stream);
+			}
 		}
 
 		if (this.#options.discardStdin && process.stdin.isTTY && this.#isDiscardingStdin) {
@@ -422,19 +426,15 @@ export async function oraPromise(action, options) {
 		const promise = actionIsFunction ? action(spinner) : action;
 		const result = await promise;
 
-		spinner.succeed(
-			successText === undefined
-				? undefined
-				: (typeof successText === 'string' ? successText : successText(result)),
-		);
+		spinner.succeed(successText === undefined
+			? undefined
+			: (typeof successText === 'string' ? successText : successText(result)));
 
 		return result;
 	} catch (error) {
-		spinner.fail(
-			failText === undefined
-				? undefined
-				: (typeof failText === 'string' ? failText : failText(error)),
-		);
+		spinner.fail(failText === undefined
+			? undefined
+			: (typeof failText === 'string' ? failText : failText(error)));
 
 		throw error;
 	}

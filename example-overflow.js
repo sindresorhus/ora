@@ -7,17 +7,17 @@ console.log(chalk.bold.cyan('\n📏 Terminal Height Overflow Test - Fixed Versio
 console.log(chalk.gray('This demo shows the fix for issue #121 - multiline content exceeding terminal height.\n'));
 
 // Get terminal dimensions
-const rows = process.stderr.rows || 30;
-const cols = process.stderr.columns || 80;
+const rows = process.stderr.rows ?? 30;
+const cols = process.stderr.columns ?? 80;
 
 console.log(chalk.yellow(`Your terminal: ${rows} rows × ${cols} columns`));
 console.log(chalk.green(`Creating spinner with ${rows + 10} lines (exceeds by 10 lines)\n`));
 
 // Create content that exceeds terminal height
 const lines = [];
-for (let i = 1; i <= rows + 10; i++) {
-	const emoji = ['🔴', '🟠', '🟡', '🟢', '🔵', '🟣'][i % 6];
-	lines.push(`${emoji} Line ${String(i).padStart(3, '0')}: Processing item #${i}`);
+for (let index = 1; index <= rows + 10; index++) {
+	const emoji = ['🔴', '🟠', '🟡', '🟢', '🔵', '🟣'][index % 6];
+	lines.push(`${emoji} Line ${String(index).padStart(3, '0')}: Processing item #${index}`);
 }
 
 const spinner = ora({
