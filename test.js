@@ -434,6 +434,18 @@ test('.stopAndPersist() with prefixText and suffixText', macro, spinner => {
 	spinner.stopAndPersist({symbol: '@', text: 'foo'});
 }, /bar @ foo baz\n$/, {prefixText: 'bar', suffixText: 'baz'});
 
+test('.stopAndPersist() with dynamic prefixText and suffixText', macro, spinner => {
+	spinner.stopAndPersist({symbol: '#', text: 'work'});
+}, /pre # work post\n$/, {prefixText: () => 'pre', suffixText: () => 'post'});
+
+test('.stopAndPersist() with dynamic empty prefixText and suffixText has no stray spaces', macro, spinner => {
+	spinner.stopAndPersist({symbol: '#', text: 'work'});
+}, /# work\n$/, {prefixText: () => '', suffixText: () => ''});
+
+test('.stopAndPersist() with empty symbol does not add separator', macro, spinner => {
+	spinner.stopAndPersist({symbol: '', text: 'done'});
+}, /done\n$/, {});
+
 // New clear method tests
 
 const currentClearMethod = transFormTTY => {
@@ -1173,6 +1185,79 @@ test('frame() should display both dynamic prefixText and suffixText from functio
 	t.not(frame1, frame2);
 });
 
+test('frame() should not add leading space when prefixText() returns empty', t => {
+	const spinner = ora({
+		text: 'test',
+		prefixText: () => '',
+		color: false,
+	});
+
+	const frame = spinner.frame();
+	// First character should be the spinner frame, not a space
+	t.not(frame[0], ' ');
+});
+
+test('frame() should not add trailing space when suffixText() returns empty', t => {
+	const spinner = ora({
+		text: 'test',
+		suffixText: () => '',
+		color: false,
+	});
+
+	const frame = spinner.frame();
+	t.false(frame.endsWith(' '));
+});
+
+test('render() uses actual content for line counts with dynamic prefixText', t => {
+	const stream = getPassThroughStream();
+	stream.isTTY = true;
+	stream.columns = 10;
+
+	let call = 0;
+	const spinner = ora({
+		stream,
+		text: 'hello',
+		prefixText() {
+			call++;
+			return call === 1 ? 'p' : 'pppppppppppp';
+		},
+		color: false,
+		isEnabled: true,
+	});
+
+	spinner.render();
+	const first = spinner._linesToClear;
+	spinner.render();
+	const second = spinner._linesToClear;
+
+	t.true(second >= first);
+});
+
+test('render() uses actual content for line counts with dynamic suffixText', t => {
+	const stream = getPassThroughStream();
+	stream.isTTY = true;
+	stream.columns = 10;
+
+	let call = 0;
+	const spinner = ora({
+		stream,
+		text: 'hello',
+		suffixText() {
+			call++;
+			return call === 1 ? '' : 'ssssssssssss';
+		},
+		color: false,
+		isEnabled: true,
+	});
+
+	spinner.render();
+	const first = spinner._linesToClear;
+	spinner.render();
+	const second = spinner._linesToClear;
+
+	t.true(second >= first);
+});
+
 test('frame() should handle mixed static and dynamic text', t => {
 	let counter = 0;
 	const spinner = ora({
@@ -1235,4 +1320,57 @@ test('frame() functions should only be called during frame() execution, not duri
 	const frame2 = spinner.frame();
 	t.is(constructorCalls, 2);
 	t.true(frame2.includes('Called 2'));
+});
+
+test('updateLineCount() does not call prefix/suffix functions when changing text', t => {
+	let calls = 0;
+	const spinner = ora({
+		text: 'test',
+		prefixText() {
+			calls++;
+			return 'pref';
+		},
+		suffixText() {
+			calls++;
+			return 'suf';
+		},
+		color: false,
+	});
+
+	// Change text which triggers #updateLineCount(); functions must not run
+	spinner.text = 'changed';
+	t.is(calls, 0);
+
+	// Only frame() should call them
+	spinner.frame();
+	t.is(calls, 2);
+});
+
+test('dynamic prefix can trigger truncation', t => {
+	const stream = getPassThroughStream();
+	stream.rows = 5;
+	stream.columns = 80;
+	stream.isTTY = true;
+
+	let wrote = '';
+	const originalWrite = stream.write;
+	stream.write = function (content) {
+		wrote = content;
+		return originalWrite.call(this, content);
+	};
+
+	const spinner = ora({
+		stream,
+		text: 'base',
+		prefixText: () => Array.from({length: 20}, (_, i) => `L${i + 1}`).join('\n'),
+		color: false,
+		isEnabled: true,
+	});
+
+	spinner.start();
+	spinner.render();
+
+	t.true(wrote.includes('(content truncated to fit terminal)'));
+
+	spinner.stop();
 });

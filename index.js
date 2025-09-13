@@ -15,6 +15,7 @@ class Ora {
 	#lineCount = 0;
 	#frameIndex = -1;
 	#lastSpinnerFrameTime = 0;
+	#lastIndent = 0;
 	#options;
 	#spinner;
 	#stream;
@@ -162,44 +163,44 @@ class Ora {
 		return this.#id !== undefined;
 	}
 
-	#getFullPrefixText(prefixText = this.#prefixText, postfix = ' ') {
-		if (typeof prefixText === 'string' && prefixText !== '') {
-			return prefixText + postfix;
-		}
-
-		if (typeof prefixText === 'function') {
-			return prefixText() + postfix;
+	#formatAffix(value, separator, placeBefore = false) {
+		const resolved = typeof value === 'function' ? value() : value;
+		if (typeof resolved === 'string' && resolved !== '') {
+			return placeBefore ? (separator + resolved) : (resolved + separator);
 		}
 
 		return '';
 	}
 
+	#getFullPrefixText(prefixText = this.#prefixText, postfix = ' ') {
+		return this.#formatAffix(prefixText, postfix, false);
+	}
+
 	#getFullSuffixText(suffixText = this.#suffixText, prefix = ' ') {
-		if (typeof suffixText === 'string' && suffixText !== '') {
-			return prefix + suffixText;
+		return this.#formatAffix(suffixText, prefix, true);
+	}
+
+	#computeLineCountFrom(text, columns) {
+		let count = 0;
+		for (const line of stripAnsi(text).split('\n')) {
+			count += Math.max(1, Math.ceil(stringWidth(line) / columns));
 		}
 
-		if (typeof suffixText === 'function') {
-			return prefix + suffixText();
-		}
-
-		return '';
+		return count;
 	}
 
 	#updateLineCount() {
 		const columns = this.#stream.columns ?? 80;
 
-		// Use simple approximations for line calculation to avoid calling functions
+		// Simple side-effect free approximation (do not call functions)
 		const prefixText = typeof this.#prefixText === 'function' ? '' : this.#prefixText;
 		const suffixText = typeof this.#suffixText === 'function' ? '' : this.#suffixText;
-		const fullPrefixText = (typeof prefixText === 'string' && prefixText !== '') ? prefixText + '-' : '';
-		const fullSuffixText = (typeof suffixText === 'string' && suffixText !== '') ? '-' + suffixText : '';
-		const fullText = ' '.repeat(this.#indent) + fullPrefixText + '--' + this.#text + '--' + fullSuffixText;
+		const fullPrefixText = (typeof prefixText === 'string' && prefixText !== '') ? prefixText + ' ' : '';
+		const fullSuffixText = (typeof suffixText === 'string' && suffixText !== '') ? ' ' + suffixText : '';
+		const spinnerChar = '-';
+		const fullText = ' '.repeat(this.#indent) + fullPrefixText + spinnerChar + (typeof this.#text === 'string' ? ' ' + this.#text : '') + fullSuffixText;
 
-		this.#lineCount = 0;
-		for (const line of stripAnsi(fullText).split('\n')) {
-			this.#lineCount += Math.max(1, Math.ceil(stringWidth(line, {countAnsiEscapeCodes: true}) / columns));
-		}
+		this.#lineCount = this.#computeLineCountFrom(fullText, columns);
 	}
 
 	get isEnabled() {
@@ -264,11 +265,11 @@ class Ora {
 			this.#stream.clearLine(1);
 		}
 
-		if (this.#indent || this.lastIndent !== this.#indent) {
+		if (this.#indent || this.#lastIndent !== this.#indent) {
 			this.#stream.cursorTo(this.#indent);
 		}
 
-		this.lastIndent = this.#indent;
+		this.#lastIndent = this.#indent;
 		this.#linesToClear = 0;
 
 		return this;
@@ -282,15 +283,16 @@ class Ora {
 		this.clear();
 
 		let frameContent = this.frame();
-		let actualLineCount = this.#lineCount;
+		const columns = this.#stream.columns ?? 80;
+		let actualLineCount = this.#computeLineCountFrom(frameContent, columns);
 
 		// If content would exceed viewport height, truncate it to prevent garbage
 		const consoleHeight = this.#stream.rows;
-		if (consoleHeight && consoleHeight > 1 && this.#lineCount > consoleHeight) {
+		if (consoleHeight && consoleHeight > 1 && actualLineCount > consoleHeight) {
 			const lines = frameContent.split('\n');
 			const maxLines = consoleHeight - 1; // Reserve one line for truncation message
 			frameContent = [...lines.slice(0, maxLines), '... (content truncated to fit terminal)'].join('\n');
-			actualLineCount = maxLines + 1; // Truncated lines + message line
+			actualLineCount = this.#computeLineCountFrom(frameContent, columns);
 		}
 
 		this.#stream.write(frameContent);

@@ -13,6 +13,7 @@ ora({spinner: 'squish'});
 ora({spinner: {frames: ['-', '+', '-']}});
 ora({spinner: {interval: 80, frames: ['-', '+', '-']}});
 ora({color: 'cyan'});
+ora({color: false});
 ora({hideCursor: true});
 ora({indent: 1});
 ora({interval: 80});
@@ -22,6 +23,7 @@ ora({isSilent: false});
 ora({discardStdin: true});
 
 spinner.color = 'yellow';
+spinner.color = false;
 spinner.text = 'Loading rainbows';
 expectType<boolean>(spinner.isSpinning);
 spinner.spinner = 'dots';

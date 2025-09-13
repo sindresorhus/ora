@@ -80,7 +80,7 @@ Type: `string | boolean`\
 Default: `'cyan'`\
 Values: `'black' | 'red' | 'green' | 'yellow' | 'blue' | 'magenta' | 'cyan' | 'white' | 'gray' | boolean`
 
-The color of the spinner.
+The color of the spinner. Set to `false` to disable coloring.
 
 ##### hideCursor
 
