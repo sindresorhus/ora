@@ -312,6 +312,24 @@ const spinner = ora(`Loading ${chalk.red('unicorns')}`).start();
 
 JavaScript is single-threaded, so any synchronous operations will block the spinner's animation. To avoid this, prefer using asynchronous operations.
 
+### Can I log messages while the spinner is running?
+
+Yes! Ora automatically handles writes to the same stream. The spinner will temporarily clear itself, output your message, and re-render below:
+
+```js
+const spinner = ora('Processing...').start();
+
+console.log('Step 1 complete');
+console.log('Step 2 complete');
+
+spinner.succeed('Done!');
+```
+
+The output will be clean with each log appearing above the spinner. This works seamlessly without requiring any special logging methods. Both `console.log()` (stdout) and `console.error()`/`console.warn()` (stderr) are supported.
+
+> [!NOTE]
+> Don't run multiple spinners concurrently. Use one spinner at a time.
+
 ### Can I display multiple spinners simultaneously?
 
 No. Ora is designed to display a single spinner at a time. For multiple concurrent progress indicators, consider alternatives like [listr2](https://github.com/listr2/listr2) or [spinnies](https://github.com/jcarpanelli/spinnies).

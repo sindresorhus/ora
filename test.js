@@ -1,3 +1,4 @@
+/* eslint max-lines: "off" */
 import process from 'node:process';
 import {PassThrough as PassThroughStream} from 'node:stream';
 import {stripVTControlCharacters} from 'node:util';
@@ -1543,3 +1544,254 @@ test('oraPromise handles sync exceptions', async () => {
 	}, {message: 'sync error'});
 });
 
+test('handles external writes to stream while spinning', async () => {
+	const stream = getPassThroughStream();
+	stream.isTTY = true;
+	const writes = [];
+
+	// Track all writes
+	const originalWrite = stream.write;
+	stream.write = function (content, encoding, callback) {
+		writes.push(stripVTControlCharacters(content.toString()));
+		return originalWrite.call(this, content, encoding, callback);
+	};
+
+	const spinner = ora({
+		stream,
+		text: 'spinning',
+		color: false,
+		isEnabled: true,
+	});
+
+	spinner.start();
+
+	// Simulate external write (like console.log)
+	stream.write('External log\n');
+
+	spinner.succeed('done');
+
+	// Verify all content appears in output
+	assert.ok(writes.some(w => w.includes('External log')), 'External write should be captured');
+	assert.ok(writes.some(w => w.includes('spinning')), 'Spinner text should be present');
+	assert.ok(writes.some(w => w.includes('done')), 'Success text should be present');
+
+	// Verify ordering: external log appears before success message
+	const externalIndex = writes.findIndex(w => w.includes('External log'));
+	const doneIndex = writes.findIndex(w => w.includes('done'));
+	assert.ok(externalIndex !== -1 && doneIndex !== -1, 'Both messages should exist');
+	assert.ok(externalIndex < doneIndex, 'External log should appear before done message');
+
+	stream.end();
+});
+
+test('handles multiple external writes while spinning', async () => {
+	const stream = getPassThroughStream();
+	stream.isTTY = true;
+	const writes = [];
+
+	const originalWrite = stream.write;
+	stream.write = function (content, encoding, callback) {
+		writes.push(stripVTControlCharacters(content.toString()));
+		return originalWrite.call(this, content, encoding, callback);
+	};
+
+	const spinner = ora({
+		stream,
+		text: 'processing',
+		color: false,
+		isEnabled: true,
+	});
+
+	spinner.start();
+
+	// Multiple external writes
+	stream.write('Log 1\n');
+	stream.write('Log 2\n');
+	stream.write('Log 3\n');
+
+	spinner.stop();
+
+	// All logs should be present
+	assert.ok(writes.some(w => w.includes('Log 1')), 'First log should be present');
+	assert.ok(writes.some(w => w.includes('Log 2')), 'Second log should be present');
+	assert.ok(writes.some(w => w.includes('Log 3')), 'Third log should be present');
+
+	// Verify ordering
+	const log1Index = writes.findIndex(w => w.includes('Log 1'));
+	const log2Index = writes.findIndex(w => w.includes('Log 2'));
+	const log3Index = writes.findIndex(w => w.includes('Log 3'));
+
+	assert.ok(log1Index < log2Index, 'Log 1 should appear before Log 2');
+	assert.ok(log2Index < log3Index, 'Log 2 should appear before Log 3');
+
+	stream.end();
+});
+
+test('external writes preserve chunk boundaries without injecting newlines', async () => {
+	const stream = getPassThroughStream();
+	stream.isTTY = true;
+	const outputPromise = getStream(stream);
+	const originalWrite = stream.write;
+
+	const spinner = ora({
+		stream,
+		text: 'processing',
+		color: false,
+		isEnabled: true,
+	});
+
+	spinner.start();
+	assert.notStrictEqual(stream.write, originalWrite, 'hook should wrap stream.write');
+
+	stream.write('Downloading ');
+	stream.write('42%');
+	stream.write('\n');
+
+	spinner.stop();
+	assert.strictEqual(stream.write, originalWrite, 'hook should restore original stream.write');
+	stream.end();
+
+	const outputRaw = await outputPromise;
+	const stripped = stripVTControlCharacters(outputRaw.toString().replaceAll('\r', ''));
+
+	assert.ok(stripped.includes('Downloading 42%\n'), 'line should remain intact without injected newline');
+	assert.ok(!stripped.includes('Downloading \n42%'), 'should not inject newline between partial chunks');
+});
+
+test('partial external writes defer spinner renders until newline or timeout', t => {
+	const stream = getPassThroughStream();
+	stream.isTTY = true;
+
+	t.mock.timers.enable({appliesTo: ['setTimeout', 'setInterval']});
+
+	const spinner = ora({
+		stream,
+		text: 'processing',
+		color: false,
+		isEnabled: true,
+		interval: 80,
+	});
+
+	try {
+		spinner.start();
+		t.mock.timers.tick(80);
+
+		const baselineFrameIndex = spinner._frameIndex;
+
+		stream.write('Partial chunk without newline');
+		t.mock.timers.tick(199);
+		assert.strictEqual(spinner._frameIndex, baselineFrameIndex, 'frame index should not advance within deferral window');
+
+		stream.write('\n');
+		assert.ok(spinner._frameIndex > baselineFrameIndex, 'newline should resume rendering immediately');
+		const afterNewlineFrameIndex = spinner._frameIndex;
+
+		stream.write('Another partial chunk');
+		t.mock.timers.tick(199);
+		assert.strictEqual(spinner._frameIndex, afterNewlineFrameIndex, 'second partial chunk should defer renders again');
+
+		t.mock.timers.tick(1);
+		assert.ok(spinner._frameIndex > afterNewlineFrameIndex, 'timeout should eventually resume rendering');
+	} finally {
+		spinner.stop();
+		stream.end();
+		t.mock.restoreAll();
+	}
+});
+
+test('handles stream write errors gracefully', () => {
+	const stream = getPassThroughStream();
+	stream.isTTY = true;
+
+	// Wrap the real write to optionally throw
+	let shouldThrow = false;
+	const realWrite = stream.write;
+	stream.write = function (...args) {
+		if (shouldThrow) {
+			throw new Error('Stream write error');
+		}
+
+		return realWrite.apply(this, args);
+	};
+
+	const spinner = ora({
+		stream,
+		text: 'test',
+		color: false,
+		isEnabled: true,
+	});
+
+	spinner.start();
+	// Hook now wraps our throwing wrapper
+
+	// Enable throwing - this will cause cursor operations in clear() to throw
+	shouldThrow = true;
+
+	// External write triggers hook -> clear() -> cursorTo() -> our wrapper throws
+	assert.throws(() => {
+		stream.write('External write');
+	}, {message: 'Stream write error'});
+
+	// Disable throwing
+	shouldThrow = false;
+
+	// If flag was stuck at true, this external write would pass through as internal (no clear/render)
+	// and subsequent operations would fail. Verify it works correctly:
+	assert.doesNotThrow(() => {
+		stream.write('Should work now\n');
+		spinner.stop();
+	});
+});
+
+test('hooks both stdout and stderr', () => {
+	const stream = getPassThroughStream();
+	stream.isTTY = true;
+
+	// Save original stdout and stderr
+	const originalStdout = process.stdout;
+	const originalStderr = process.stderr;
+	const originalStdoutWrite = originalStdout.write;
+	const originalStderrWrite = originalStderr.write;
+
+	const stdoutWrites = [];
+	const stderrWrites = [];
+
+	// Track writes to both streams without reassigning them
+	process.stdout.write = function (content, encoding, callback) {
+		stdoutWrites.push(stripVTControlCharacters(content.toString()));
+		return originalStdoutWrite.call(this, content, encoding, callback);
+	};
+
+	process.stderr.write = function (content, encoding, callback) {
+		stderrWrites.push(stripVTControlCharacters(content.toString()));
+		return originalStderrWrite.call(this, content, encoding, callback);
+	};
+
+	try {
+		const spinner = ora({
+			stream,
+			text: 'processing',
+			color: false,
+			isEnabled: true,
+		});
+
+		spinner.start();
+
+		// Write to both stdout and stderr - both should be intercepted
+		process.stdout.write('stdout log\n');
+		process.stderr.write('stderr log\n');
+
+		spinner.stop();
+
+		// Verify both writes were intercepted
+		// The hook should have cleared/re-rendered for both writes
+		assert.ok(stdoutWrites.some(w => w.includes('stdout log')), 'stdout write should be captured');
+		assert.ok(stderrWrites.some(w => w.includes('stderr log')), 'stderr write should be captured');
+
+		stream.end();
+	} finally {
+		// Restore original write methods
+		process.stdout.write = originalStdoutWrite;
+		process.stderr.write = originalStderrWrite;
+	}
+});

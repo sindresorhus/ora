@@ -9,25 +9,106 @@ import isInteractive from 'is-interactive';
 import isUnicodeSupported from 'is-unicode-supported';
 import stdinDiscarder from 'stdin-discarder';
 
+// Constants
+const RENDER_DEFERRAL_TIMEOUT = 200; // Milliseconds to wait before re-rendering after partial chunk write
+
+// Global state for concurrent spinner detection
+const activeHooksPerStream = new Map(); // Stream → ora instance
+
 class Ora {
 	#linesToClear = 0;
-	#isDiscardingStdin = false;
-	#lineCount = 0;
 	#frameIndex = -1;
-	#lastSpinnerFrameTime = 0;
-	#lastIndent = 0;
+	#lastFrameTime = 0;
 	#options;
 	#spinner;
 	#stream;
 	#id;
-	#initialInterval;
-	#isEnabled;
-	#isSilent;
-	#indent;
-	#text;
-	#prefixText;
-	#suffixText;
+	#hookedStreams = new Map();
+	#isInternalWrite = false;
+	#drainHandler;
+	#deferRenderTimer;
+	#isDiscardingStdin = false;
 	color;
+
+	// Helper to execute writes while preventing hook recursion
+	#internalWrite(fn) {
+		this.#isInternalWrite = true;
+		try {
+			return fn();
+		} finally {
+			this.#isInternalWrite = false;
+		}
+	}
+
+	// Helper to render if still spinning
+	#tryRender() {
+		if (this.isSpinning) {
+			this.render();
+		}
+	}
+
+	#stringifyChunk(chunk, encoding) {
+		if (chunk === undefined || chunk === null) {
+			return '';
+		}
+
+		if (typeof chunk === 'string') {
+			return chunk;
+		}
+
+		/* eslint-disable n/prefer-global/buffer */
+		if (Buffer.isBuffer(chunk) || ArrayBuffer.isView(chunk)) {
+			const normalizedEncoding = (typeof encoding === 'string' && encoding && encoding !== 'buffer') ? encoding : 'utf8';
+			return Buffer.from(chunk).toString(normalizedEncoding);
+		}
+		/* eslint-enable n/prefer-global/buffer */
+
+		return String(chunk);
+	}
+
+	#chunkTerminatesLine(chunkString) {
+		if (!chunkString) {
+			return false;
+		}
+
+		const lastCharacter = chunkString.at(-1);
+		return lastCharacter === '\n' || lastCharacter === '\r';
+	}
+
+	#scheduleRenderDeferral() {
+		// If already deferred, don't reset timer - let it complete
+		if (this.#deferRenderTimer) {
+			return;
+		}
+
+		this.#deferRenderTimer = setTimeout(() => {
+			this.#deferRenderTimer = undefined;
+
+			if (this.isSpinning) {
+				this.#tryRender();
+			}
+		}, RENDER_DEFERRAL_TIMEOUT);
+
+		if (typeof this.#deferRenderTimer?.unref === 'function') {
+			this.#deferRenderTimer.unref();
+		}
+	}
+
+	#clearRenderDeferral() {
+		if (this.#deferRenderTimer) {
+			clearTimeout(this.#deferRenderTimer);
+			this.#deferRenderTimer = undefined;
+		}
+	}
+
+	// Helper to build complete line with symbol, text, prefix, and suffix
+	#buildOutputLine(symbol, text, prefixText, suffixText) {
+		const fullPrefixText = this.#getFullPrefixText(prefixText, ' ');
+		const separatorText = symbol ? ' ' : '';
+		const fullText = (typeof text === 'string') ? separatorText + text : '';
+		const fullSuffixText = this.#getFullSuffixText(suffixText, ' ');
+		return fullPrefixText + symbol + fullText + fullSuffixText;
+	}
 
 	constructor(options) {
 		if (typeof options === 'string') {
@@ -47,16 +128,23 @@ class Ora {
 		// Public
 		this.color = this.#options.color;
 
-		// It's important that these use the public setters.
-		this.spinner = this.#options.spinner;
-
-		this.#initialInterval = this.#options.interval;
 		this.#stream = this.#options.stream;
-		this.#isEnabled = typeof this.#options.isEnabled === 'boolean' ? this.#options.isEnabled : isInteractive({stream: this.#stream});
-		this.#isSilent = typeof this.#options.isSilent === 'boolean' ? this.#options.isSilent : false;
+
+		// Normalize isEnabled and isSilent into options
+		if (typeof this.#options.isEnabled !== 'boolean') {
+			this.#options.isEnabled = isInteractive({stream: this.#stream});
+		}
+
+		if (typeof this.#options.isSilent !== 'boolean') {
+			this.#options.isSilent = false;
+		}
 
 		// Set *after* `this.#stream`.
+		// Store original interval before spinner setter clears it
+		const userInterval = this.#options.interval;
 		// It's important that these use the public setters.
+		this.spinner = this.#options.spinner;
+		this.#options.interval = userInterval;
 		this.text = this.#options.text;
 		this.prefixText = this.#options.prefixText;
 		this.suffixText = this.#options.suffixText;
@@ -64,7 +152,7 @@ class Ora {
 
 		if (process.env.NODE_ENV === 'test') {
 			this._stream = this.#stream;
-			this._isEnabled = this.#isEnabled;
+			this._isEnabled = this.#options.isEnabled;
 
 			Object.defineProperty(this, '_linesToClear', {
 				get() {
@@ -83,14 +171,21 @@ class Ora {
 
 			Object.defineProperty(this, '_lineCount', {
 				get() {
-					return this.#lineCount;
+					const columns = this.#stream.columns ?? 80;
+					const prefixText = typeof this.#options.prefixText === 'function' ? '' : this.#options.prefixText;
+					const suffixText = typeof this.#options.suffixText === 'function' ? '' : this.#options.suffixText;
+					const fullPrefixText = (typeof prefixText === 'string' && prefixText !== '') ? prefixText + ' ' : '';
+					const fullSuffixText = (typeof suffixText === 'string' && suffixText !== '') ? ' ' + suffixText : '';
+					const spinnerChar = '-';
+					const fullText = ' '.repeat(this.#options.indent) + fullPrefixText + spinnerChar + (typeof this.#options.text === 'string' ? ' ' + this.#options.text : '') + fullSuffixText;
+					return this.#computeLineCountFrom(fullText, columns);
 				},
 			});
 		}
 	}
 
 	get indent() {
-		return this.#indent;
+		return this.#options.indent;
 	}
 
 	set indent(indent = 0) {
@@ -98,12 +193,11 @@ class Ora {
 			throw new Error('The `indent` option must be an integer from 0 and up');
 		}
 
-		this.#indent = indent;
-		this.#updateLineCount();
+		this.#options.indent = indent;
 	}
 
 	get interval() {
-		return this.#initialInterval ?? this.#spinner.interval ?? 100;
+		return this.#options.interval ?? this.#spinner.interval ?? 100;
 	}
 
 	get spinner() {
@@ -112,7 +206,7 @@ class Ora {
 
 	set spinner(spinner) {
 		this.#frameIndex = -1;
-		this.#initialInterval = undefined;
+		this.#options.interval = undefined;
 
 		if (typeof spinner === 'object') {
 			if (!Array.isArray(spinner.frames) || spinner.frames.length === 0 || spinner.frames.some(frame => typeof frame !== 'string')) {
@@ -137,30 +231,27 @@ class Ora {
 	}
 
 	get text() {
-		return this.#text;
+		return this.#options.text;
 	}
 
 	set text(value = '') {
-		this.#text = value;
-		this.#updateLineCount();
+		this.#options.text = value;
 	}
 
 	get prefixText() {
-		return this.#prefixText;
+		return this.#options.prefixText;
 	}
 
 	set prefixText(value = '') {
-		this.#prefixText = value;
-		this.#updateLineCount();
+		this.#options.prefixText = value;
 	}
 
 	get suffixText() {
-		return this.#suffixText;
+		return this.#options.suffixText;
 	}
 
 	set suffixText(value = '') {
-		this.#suffixText = value;
-		this.#updateLineCount();
+		this.#options.suffixText = value;
 	}
 
 	get isSpinning() {
@@ -176,11 +267,11 @@ class Ora {
 		return '';
 	}
 
-	#getFullPrefixText(prefixText = this.#prefixText, postfix = ' ') {
+	#getFullPrefixText(prefixText = this.#options.prefixText, postfix = ' ') {
 		return this.#formatAffix(prefixText, postfix, false);
 	}
 
-	#getFullSuffixText(suffixText = this.#suffixText, prefix = ' ') {
+	#getFullSuffixText(suffixText = this.#options.suffixText, prefix = ' ') {
 		return this.#formatAffix(suffixText, prefix, true);
 	}
 
@@ -193,22 +284,8 @@ class Ora {
 		return count;
 	}
 
-	#updateLineCount() {
-		const columns = this.#stream.columns ?? 80;
-
-		// Simple side-effect free approximation (do not call functions)
-		const prefixText = typeof this.#prefixText === 'function' ? '' : this.#prefixText;
-		const suffixText = typeof this.#suffixText === 'function' ? '' : this.#suffixText;
-		const fullPrefixText = (typeof prefixText === 'string' && prefixText !== '') ? prefixText + ' ' : '';
-		const fullSuffixText = (typeof suffixText === 'string' && suffixText !== '') ? ' ' + suffixText : '';
-		const spinnerChar = '-';
-		const fullText = ' '.repeat(this.#indent) + fullPrefixText + spinnerChar + (typeof this.#text === 'string' ? ' ' + this.#text : '') + fullSuffixText;
-
-		this.#lineCount = this.#computeLineCountFrom(fullText, columns);
-	}
-
 	get isEnabled() {
-		return this.#isEnabled && !this.#isSilent;
+		return this.#options.isEnabled && !this.#options.isSilent;
 	}
 
 	set isEnabled(value) {
@@ -216,11 +293,11 @@ class Ora {
 			throw new TypeError('The `isEnabled` option must be a boolean');
 		}
 
-		this.#isEnabled = value;
+		this.#options.isEnabled = value;
 	}
 
 	get isSilent() {
-		return this.#isSilent;
+		return this.#options.isSilent;
 	}
 
 	set isSilent(value) {
@@ -228,16 +305,15 @@ class Ora {
 			throw new TypeError('The `isSilent` option must be a boolean');
 		}
 
-		this.#isSilent = value;
+		this.#options.isSilent = value;
 	}
 
 	frame() {
-		// Ensure we only update the spinner frame at the wanted interval,
-		// even if the render method is called more often.
+		// Only advance frame if enough time has passed (throttle to interval)
 		const now = Date.now();
-		if (this.#frameIndex === -1 || now - this.#lastSpinnerFrameTime >= this.interval) {
-			this.#frameIndex = ++this.#frameIndex % this.#spinner.frames.length;
-			this.#lastSpinnerFrameTime = now;
+		if (this.#frameIndex === -1 || now - this.#lastFrameTime >= this.interval) {
+			this.#frameIndex = (this.#frameIndex + 1) % this.#spinner.frames.length;
+			this.#lastFrameTime = now;
 		}
 
 		const {frames} = this.#spinner;
@@ -247,40 +323,122 @@ class Ora {
 			frame = chalk[this.color](frame);
 		}
 
-		const fullPrefixText = this.#getFullPrefixText(this.#prefixText, ' ');
+		const fullPrefixText = this.#getFullPrefixText(this.#options.prefixText, ' ');
 		const fullText = typeof this.text === 'string' ? ' ' + this.text : '';
-		const fullSuffixText = this.#getFullSuffixText(this.#suffixText, ' ');
+		const fullSuffixText = this.#getFullSuffixText(this.#options.suffixText, ' ');
 
 		return fullPrefixText + frame + fullText + fullSuffixText;
 	}
 
 	clear() {
-		if (!this.#isEnabled || !this.#stream.isTTY) {
+		if (!this.isEnabled || !this.#stream.isTTY) {
 			return this;
 		}
 
-		this.#stream.cursorTo(0);
+		// Protect cursor control methods (cursorTo, moveCursor, clearLine) which internally call stream.write
+		this.#internalWrite(() => {
+			this.#stream.cursorTo(0);
 
-		for (let index = 0; index < this.#linesToClear; index++) {
-			if (index > 0) {
-				this.#stream.moveCursor(0, -1);
+			for (let index = 0; index < this.#linesToClear; index++) {
+				if (index > 0) {
+					this.#stream.moveCursor(0, -1);
+				}
+
+				this.#stream.clearLine(1);
 			}
 
-			this.#stream.clearLine(1);
-		}
+			if (this.#options.indent) {
+				this.#stream.cursorTo(this.#options.indent);
+			}
+		});
 
-		if (this.#indent || this.#lastIndent !== this.#indent) {
-			this.#stream.cursorTo(this.#indent);
-		}
-
-		this.#lastIndent = this.#indent;
 		this.#linesToClear = 0;
 
 		return this;
 	}
 
+	// Helper to hook a single stream
+	#hookStream(stream) {
+		if (!stream || this.#hookedStreams.has(stream) || !stream.isTTY || typeof stream.write !== 'function') {
+			return;
+		}
+
+		// Detect concurrent spinners
+		if (activeHooksPerStream.has(stream)) {
+			console.warn('[ora] Multiple concurrent spinners detected. This may cause visual corruption. Use one spinner at a time.');
+		}
+
+		const originalWrite = stream.write;
+		this.#hookedStreams.set(stream, originalWrite);
+		activeHooksPerStream.set(stream, this);
+		stream.write = (chunk, encoding, callback) => this.#hookedWrite(stream, originalWrite, chunk, encoding, callback);
+	}
+
+	/**
+	Intercept stream writes while spinner is active to handle external writes cleanly without visual corruption.
+	Hooks process stdio streams and the active spinner stream so console.log(), console.error(), and direct writes stay tidy.
+	*/
+	#installHook() {
+		if (!this.isEnabled || this.#hookedStreams.size > 0) {
+			return;
+		}
+
+		const streamsToHook = new Set([this.#stream, process.stdout, process.stderr]);
+
+		for (const stream of streamsToHook) {
+			this.#hookStream(stream);
+		}
+	}
+
+	#uninstallHook() {
+		for (const [stream, originalWrite] of this.#hookedStreams) {
+			stream.write = originalWrite;
+			if (activeHooksPerStream.get(stream) === this) {
+				activeHooksPerStream.delete(stream);
+			}
+		}
+
+		this.#hookedStreams.clear();
+	}
+
+	// eslint-disable-next-line max-params -- Need stream and originalWrite for multi-stream support
+	#hookedWrite(stream, originalWrite, chunk, encoding, callback) {
+		// Handle both write(chunk, encoding, callback) and write(chunk, callback) signatures
+		if (typeof encoding === 'function') {
+			callback = encoding;
+			encoding = undefined;
+		}
+
+		// Pass through our own internal writes (spinner rendering, cursor control)
+		if (this.#isInternalWrite) {
+			return originalWrite.call(stream, chunk, encoding, callback);
+		}
+
+		// External write detected - clear spinner, write content, re-render if appropriate
+		this.clear();
+
+		const chunkString = this.#stringifyChunk(chunk, encoding);
+		const chunkTerminatesLine = this.#chunkTerminatesLine(chunkString);
+
+		const writeResult = originalWrite.call(stream, chunk, encoding, callback);
+
+		// Schedule or clear render deferral based on chunk content
+		if (chunkTerminatesLine) {
+			this.#clearRenderDeferral();
+		} else if (chunkString.length > 0) {
+			this.#scheduleRenderDeferral();
+		}
+
+		// Re-render spinner below the new output if still spinning and not deferred
+		if (this.isSpinning && !this.#deferRenderTimer) {
+			this.render();
+		}
+
+		return writeResult;
+	}
+
 	render() {
-		if (!this.#isEnabled || this.#isSilent) {
+		if (!this.isEnabled || this.#drainHandler || this.#deferRenderTimer) {
 			return this;
 		}
 
@@ -298,7 +456,18 @@ class Ora {
 			frameContent = [...lines.slice(0, maxLines), '... (content truncated to fit terminal)'].join('\n');
 		}
 
-		this.#stream.write(frameContent);
+		const canContinue = this.#internalWrite(() => this.#stream.write(frameContent));
+
+		// Handle backpressure - pause rendering if stream buffer is full
+		if (canContinue === false && this.#stream.isTTY) {
+			this.#drainHandler = () => {
+				this.#drainHandler = undefined;
+				this.#tryRender();
+			};
+
+			this.#stream.once('drain', this.#drainHandler);
+		}
+
 		this.#linesToClear = this.#computeLineCountFrom(frameContent, columns);
 
 		return this;
@@ -309,15 +478,16 @@ class Ora {
 			this.text = text;
 		}
 
-		if (this.#isSilent) {
+		if (this.isSilent) {
 			return this;
 		}
 
-		if (!this.#isEnabled) {
-			const line = ' '.repeat(this.#indent) + this.#getFullPrefixText(this.#prefixText, ' ') + (this.text ? `- ${this.text}` : '') + this.#getFullSuffixText(this.#suffixText, ' ');
+		if (!this.isEnabled) {
+			const symbol = this.text ? '-' : '';
+			const line = ' '.repeat(this.#options.indent) + this.#buildOutputLine(symbol, this.text, this.#options.prefixText, this.#options.suffixText);
 
 			if (line.trim() !== '') {
-				this.#stream.write(line + '\n');
+				this.#internalWrite(() => this.#stream.write(line + '\n'));
 			}
 
 			return this;
@@ -332,10 +502,11 @@ class Ora {
 		}
 
 		if (this.#options.discardStdin && process.stdin.isTTY) {
-			this.#isDiscardingStdin = true;
 			stdinDiscarder.start();
+			this.#isDiscardingStdin = true;
 		}
 
+		this.#installHook();
 		this.render();
 		this.#id = setInterval(this.render.bind(this), this.interval);
 
@@ -345,18 +516,28 @@ class Ora {
 	stop() {
 		clearInterval(this.#id);
 		this.#id = undefined;
-		this.#frameIndex = 0;
+		this.#frameIndex = -1;
+		this.#lastFrameTime = 0;
 
-		if (this.#isEnabled) {
+		this.#clearRenderDeferral();
+		this.#uninstallHook();
+
+		// Clean up drain handler if it exists
+		if (this.#drainHandler) {
+			this.#stream.removeListener('drain', this.#drainHandler);
+			this.#drainHandler = undefined;
+		}
+
+		if (this.isEnabled) {
 			this.clear();
 			if (this.#options.hideCursor) {
 				cliCursor.show(this.#stream);
 			}
 		}
 
-		if (this.#options.discardStdin && process.stdin.isTTY && this.#isDiscardingStdin) {
-			stdinDiscarder.stop();
+		if (this.#isDiscardingStdin) {
 			this.#isDiscardingStdin = false;
+			stdinDiscarder.stop();
 		}
 
 		return this;
@@ -379,26 +560,19 @@ class Ora {
 	}
 
 	stopAndPersist(options = {}) {
-		if (this.#isSilent) {
+		if (this.isSilent) {
 			return this;
 		}
 
-		const prefixText = options.prefixText ?? this.#prefixText;
-		const fullPrefixText = this.#getFullPrefixText(prefixText, ' ');
-
-		const symbolText = options.symbol ?? ' ';
-
+		const symbol = options.symbol ?? ' ';
 		const text = options.text ?? this.text;
-		const separatorText = symbolText ? ' ' : '';
-		const fullText = (typeof text === 'string') ? separatorText + text : '';
+		const prefixText = options.prefixText ?? this.#options.prefixText;
+		const suffixText = options.suffixText ?? this.#options.suffixText;
 
-		const suffixText = options.suffixText ?? this.#suffixText;
-		const fullSuffixText = this.#getFullSuffixText(suffixText, ' ');
-
-		const textToWrite = fullPrefixText + symbolText + fullText + fullSuffixText + '\n';
+		const textToWrite = this.#buildOutputLine(symbol, text, prefixText, suffixText) + '\n';
 
 		this.stop();
-		this.#stream.write(textToWrite);
+		this.#internalWrite(() => this.#stream.write(textToWrite));
 
 		return this;
 	}
