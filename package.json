@@ -50,8 +50,7 @@
 		"is-unicode-supported": "^2.1.0",
 		"log-symbols": "^7.0.1",
 		"stdin-discarder": "^0.2.2",
-		"string-width": "^8.1.0",
-		"strip-ansi": "^7.1.2"
+		"string-width": "^8.1.0"
 	},
 	"devDependencies": {
 		"@types/node": "^24.5.0",
