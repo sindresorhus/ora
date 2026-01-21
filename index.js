@@ -1,9 +1,9 @@
 import process from 'node:process';
+import {stripVTControlCharacters} from 'node:util';
 import chalk from 'chalk';
 import cliCursor from 'cli-cursor';
 import cliSpinners from 'cli-spinners';
 import logSymbols from 'log-symbols';
-import stripAnsi from 'strip-ansi';
 import stringWidth from 'string-width';
 import isInteractive from 'is-interactive';
 import isUnicodeSupported from 'is-unicode-supported';
@@ -186,7 +186,7 @@ class Ora {
 
 	#computeLineCountFrom(text, columns) {
 		let count = 0;
-		for (const line of stripAnsi(text).split('\n')) {
+		for (const line of stripVTControlCharacters(text).split('\n')) {
 			count += Math.max(1, Math.ceil(stringWidth(line) / columns));
 		}
 

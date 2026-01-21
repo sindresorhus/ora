@@ -1,9 +1,9 @@
 import process from 'node:process';
 import {PassThrough as PassThroughStream} from 'node:stream';
+import {stripVTControlCharacters} from 'node:util';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import getStream from 'get-stream';
-import stripAnsi from 'strip-ansi';
 import TransformTTY from 'transform-tty';
 import ora, {oraPromise, spinners} from './index.js';
 
@@ -35,7 +35,7 @@ const doSpinner = async (function_, extraOptions = {}) => {
 	function_(spinner);
 	stream.end();
 
-	return stripAnsi(await output);
+	return stripVTControlCharacters(await output);
 };
 
 test('main', async () => {
@@ -186,7 +186,7 @@ test('oraPromise() - resolves', async () => {
 	await resolves;
 	stream.end();
 
-	assert.match(stripAnsi(await output), /[√✔] foo\n$/);
+	assert.match(stripVTControlCharacters(await output), /[√✔] foo\n$/);
 });
 
 test('oraPromise() - rejects', async () => {
@@ -205,7 +205,7 @@ test('oraPromise() - rejects', async () => {
 
 	stream.end();
 
-	assert.match(stripAnsi(await output), /[×✖] foo\n$/);
+	assert.match(stripVTControlCharacters(await output), /[×✖] foo\n$/);
 });
 
 test('erases wrapped lines', () => {
@@ -322,7 +322,7 @@ test('reset frameIndex when setting new spinner', async () => {
 	stream.end();
 
 	assert.strictEqual(spinner._frameIndex, 0);
-	assert.match(stripAnsi(await output), /foo baz/);
+	assert.match(stripVTControlCharacters(await output), /foo baz/);
 });
 
 test('set the correct interval when changing spinner (object case)', () => {
@@ -590,7 +590,7 @@ test('oraPromise(function) passes spinner and supports successText function', as
 	});
 
 	stream.end();
-	assert.match(stripAnsi(await output), /[√✔] done: 7\n$/);
+	assert.match(stripVTControlCharacters(await output), /[√✔] done: 7\n$/);
 });
 
 test('oraPromise(function) rejects and supports failText function', async () => {
@@ -611,7 +611,7 @@ test('oraPromise(function) rejects and supports failText function', async () => 
 	} catch {}
 
 	stream.end();
-	assert.match(stripAnsi(await output), /[×✖] oops: boom\n$/);
+	assert.match(stripVTControlCharacters(await output), /[×✖] oops: boom\n$/);
 });
 
 test('oraPromise() validates `action` type', async () => {
@@ -710,7 +710,7 @@ test('start() with empty text and isEnabled:false produces no output', async () 
 	spinner.start();
 	stream.end();
 
-	const text = stripAnsi(await output);
+	const text = stripVTControlCharacters(await output);
 	assert.match(text, /^(?![\s\S])/);
 });
 
@@ -1495,7 +1495,7 @@ test('disabled spinner preserves prefix/suffix/indent', async () => {
 	spinner.start();
 	stream.end();
 
-	const text = stripAnsi(await output);
+	const text = stripVTControlCharacters(await output);
 	assert.strictEqual(text, '  pre - test post\n');
 });
 
