@@ -43,7 +43,6 @@
 		"idle"
 	],
 	"dependencies": {
-		"chalk": "^5.6.2",
 		"cli-cursor": "^5.0.0",
 		"cli-spinners": "^3.2.0",
 		"is-interactive": "^2.0.0",
@@ -54,7 +53,6 @@
 	},
 	"devDependencies": {
 		"@types/node": "^24.5.0",
-		"ava": "^6.4.1",
 		"get-stream": "^9.0.1",
 		"transform-tty": "^1.0.11",
 		"tsd": "^0.33.0",

@@ -1,6 +1,6 @@
 import process from 'node:process';
 import {stripVTControlCharacters} from 'node:util';
-import chalk from 'chalk';
+import { styleText } from 'node:util';
 import cliCursor from 'cli-cursor';
 import cliSpinners from 'cli-spinners';
 import logSymbols from 'log-symbols';
@@ -320,7 +320,7 @@ class Ora {
 		let frame = frames[this.#frameIndex];
 
 		if (this.color) {
-			frame = chalk[this.color](frame);
+			frame = styleText([this.color], frame);
 		}
 
 		const fullPrefixText = this.#getFullPrefixText(this.#options.prefixText, ' ');
