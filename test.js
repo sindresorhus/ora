@@ -19,6 +19,35 @@ const getPassThroughStream = () => {
 	return stream;
 };
 
+const withFakeStdin = (options = {}, callback) => {
+	const {isPaused = false} = options;
+	const originalStdinDescriptor = Object.getOwnPropertyDescriptor(process, 'stdin');
+	const fakeStdin = new PassThroughStream();
+	const rawModeCalls = [];
+
+	fakeStdin.isTTY = true;
+	fakeStdin.isRaw = false;
+	fakeStdin.setRawMode = value => {
+		rawModeCalls.push(value);
+		fakeStdin.isRaw = value;
+	};
+
+	if (isPaused) {
+		fakeStdin.pause();
+	}
+
+	Object.defineProperty(process, 'stdin', {
+		value: fakeStdin,
+		configurable: true,
+	});
+
+	try {
+		return callback({fakeStdin, rawModeCalls});
+	} finally {
+		Object.defineProperty(process, 'stdin', originalStdinDescriptor);
+	}
+};
+
 const doSpinner = async (function_, extraOptions = {}) => {
 	const stream = getPassThroughStream();
 	const output = getStream(stream);
@@ -170,6 +199,54 @@ test('.stopAndPersist() - isSilent:true can be disabled', async () => {
 		spinner.stopAndPersist({symbol: '@', text: 'all done'});
 	}, {isSilent: true});
 	assert.match(result, /@ all done\n$/);
+});
+
+test('discardStdin toggles raw mode and data listeners on TTY stdin', () => {
+	if (process.platform === 'win32') {
+		return;
+	}
+
+	withFakeStdin({}, ({fakeStdin, rawModeCalls}) => {
+		const spinner = ora({
+			stream: getPassThroughStream(),
+			text: 'foo',
+			isEnabled: true,
+		});
+		const initialListenerCount = fakeStdin.listenerCount('data');
+
+		spinner.start();
+		assert.deepStrictEqual(rawModeCalls, [true]);
+		assert.ok(fakeStdin.listenerCount('data') > initialListenerCount);
+
+		spinner.stop();
+		assert.deepStrictEqual(rawModeCalls, [true, false]);
+		assert.strictEqual(fakeStdin.listenerCount('data'), initialListenerCount);
+	});
+});
+
+test('discardStdin preserves stdin pause state', () => {
+	if (process.platform === 'win32') {
+		return;
+	}
+
+	const assertPauseStatePreserved = isPaused => {
+		withFakeStdin({isPaused}, ({fakeStdin}) => {
+			const spinner = ora({
+				stream: getPassThroughStream(),
+				text: 'foo',
+				isEnabled: true,
+			});
+			const initialPausedState = fakeStdin.isPaused();
+
+			spinner.start();
+			spinner.stop();
+
+			assert.strictEqual(fakeStdin.isPaused(), initialPausedState);
+		});
+	};
+
+	assertPauseStatePreserved(false);
+	assertPauseStatePreserved(true);
 });
 
 test('oraPromise() - resolves', async () => {
