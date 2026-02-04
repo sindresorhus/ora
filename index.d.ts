@@ -111,6 +111,8 @@ export type Options = {
 
 	This has no effect on Windows as there's no good way to implement discarding stdin properly there.
 
+	Note: `discardStdin` puts stdin into raw mode. In raw mode, `Ctrl+C` no longer generates `SIGINT` from the terminal. Ora re-emits `Ctrl+C` from stdin input, but if your code blocks the event loop with synchronous work, `Ctrl+C` handling is delayed until the blocking work ends. Use async APIs, a worker thread, or a child process to keep `Ctrl+C` responsive, or set `discardStdin` to `false`.
+
 	@default true
 	*/
 	readonly discardStdin?: boolean;
