@@ -314,6 +314,10 @@ const spinner = ora(`Loading ${chalk.red('unicorns')}`).start();
 
 JavaScript is single-threaded, so any synchronous operations will block the spinner's animation. To avoid this, prefer using asynchronous operations.
 
+### Why do I get the line spinner on Windows Terminal or WSL?
+
+Windows Terminal does [not expose](https://github.com/microsoft/terminal/issues/1040) a reliable, stable way to detect itself or Unicode support from Node, and `WT_SESSION` is explicitly informative, not a detection API and can be inherited by other terminals. That makes environment-based detection best-effort. If you are in a Unicode-capable terminal, set `spinner` explicitly, for example `ora({spinner: 'dots'})`.
+
 ### Can I log messages while the spinner is running?
 
 Yes! Ora automatically handles writes to the same stream. The spinner will temporarily clear itself, output your message, and re-render below:
