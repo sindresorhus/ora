@@ -11,6 +11,8 @@ import stdinDiscarder from 'stdin-discarder';
 
 // Constants
 const RENDER_DEFERRAL_TIMEOUT = 200; // Milliseconds to wait before re-rendering after partial chunk write
+const SYNCHRONIZED_OUTPUT_ENABLE = '\u001B[?2026h';
+const SYNCHRONIZED_OUTPUT_DISABLE = '\u001B[?2026l';
 
 // Global state for concurrent spinner detection
 const activeHooksPerStream = new Map(); // Stream → ora instance
@@ -442,33 +444,47 @@ class Ora {
 			return this;
 		}
 
-		this.clear();
+		const useSynchronizedOutput = this.#stream.isTTY;
+		let shouldDisableSynchronizedOutput = false;
 
-		let frameContent = this.frame();
-		const columns = this.#stream.columns ?? 80;
-		const actualLineCount = this.#computeLineCountFrom(frameContent, columns);
+		try {
+			if (useSynchronizedOutput) {
+				this.#internalWrite(() => this.#stream.write(SYNCHRONIZED_OUTPUT_ENABLE));
+				shouldDisableSynchronizedOutput = true;
+			}
 
-		// If content would exceed viewport height, truncate it to prevent garbage
-		const consoleHeight = this.#stream.rows;
-		if (consoleHeight && consoleHeight > 1 && actualLineCount > consoleHeight) {
-			const lines = frameContent.split('\n');
-			const maxLines = consoleHeight - 1; // Reserve one line for truncation message
-			frameContent = [...lines.slice(0, maxLines), '... (content truncated to fit terminal)'].join('\n');
+			this.clear();
+
+			let frameContent = this.frame();
+			const columns = this.#stream.columns ?? 80;
+			const actualLineCount = this.#computeLineCountFrom(frameContent, columns);
+
+			// If content would exceed viewport height, truncate it to prevent garbage
+			const consoleHeight = this.#stream.rows;
+			if (consoleHeight && consoleHeight > 1 && actualLineCount > consoleHeight) {
+				const lines = frameContent.split('\n');
+				const maxLines = consoleHeight - 1; // Reserve one line for truncation message
+				frameContent = [...lines.slice(0, maxLines), '... (content truncated to fit terminal)'].join('\n');
+			}
+
+			const canContinue = this.#internalWrite(() => this.#stream.write(frameContent));
+
+			// Handle backpressure - pause rendering if stream buffer is full
+			if (canContinue === false && this.#stream.isTTY) {
+				this.#drainHandler = () => {
+					this.#drainHandler = undefined;
+					this.#tryRender();
+				};
+
+				this.#stream.once('drain', this.#drainHandler);
+			}
+
+			this.#linesToClear = this.#computeLineCountFrom(frameContent, columns);
+		} finally {
+			if (shouldDisableSynchronizedOutput) {
+				this.#internalWrite(() => this.#stream.write(SYNCHRONIZED_OUTPUT_DISABLE));
+			}
 		}
-
-		const canContinue = this.#internalWrite(() => this.#stream.write(frameContent));
-
-		// Handle backpressure - pause rendering if stream buffer is full
-		if (canContinue === false && this.#stream.isTTY) {
-			this.#drainHandler = () => {
-				this.#drainHandler = undefined;
-				this.#tryRender();
-			};
-
-			this.#stream.once('drain', this.#drainHandler);
-		}
-
-		this.#linesToClear = this.#computeLineCountFrom(frameContent, columns);
 
 		return this;
 	}

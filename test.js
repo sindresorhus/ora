@@ -9,7 +9,45 @@ import TransformTTY from 'transform-tty';
 import ora, {oraPromise, spinners} from './index.js';
 
 const spinnerCharacter = process.platform === 'win32' ? '-' : '⠋';
+const synchronizedOutputEnable = '\u001B[?2026h';
+const synchronizedOutputDisable = '\u001B[?2026l';
 const noop = () => {};
+
+const getLastSynchronizedOutput = output => {
+	const lastEnableIndex = output.lastIndexOf(synchronizedOutputEnable);
+	if (lastEnableIndex === -1) {
+		return output;
+	}
+
+	const disableIndex = output.indexOf(synchronizedOutputDisable, lastEnableIndex);
+	if (disableIndex === -1) {
+		return output.slice(lastEnableIndex + synchronizedOutputEnable.length);
+	}
+
+	return output.slice(lastEnableIndex + synchronizedOutputEnable.length, disableIndex);
+};
+
+const stripSynchronizedOutputSequences = content => {
+	if (typeof content !== 'string') {
+		return content;
+	}
+
+	return content.replaceAll(synchronizedOutputEnable, '').replaceAll(synchronizedOutputDisable, '');
+};
+
+const applySynchronizedOutputFilter = stream => {
+	const originalWrite = stream.write;
+	stream.write = function (content, encoding, callback) {
+		const filteredContent = stripSynchronizedOutputSequences(content);
+		if (filteredContent === '') {
+			return true;
+		}
+
+		return originalWrite.call(this, filteredContent, encoding, callback);
+	};
+
+	return stream;
+};
 
 const getPassThroughStream = () => {
 	const stream = new PassThroughStream();
@@ -73,6 +111,33 @@ test('main', async () => {
 		spinner.stop();
 	});
 	assert.match(result, new RegExp(`${spinnerCharacter} foo`));
+});
+
+test('render uses synchronized output sequences', async () => {
+	const stream = getPassThroughStream();
+	stream.isTTY = true;
+	const output = getStream(stream);
+
+	const spinner = ora({
+		stream,
+		text: 'foo',
+		color: false,
+		isEnabled: true,
+	});
+
+	spinner.render();
+	stream.end();
+
+	const result = await output;
+	assert.ok(result.includes(synchronizedOutputEnable));
+	assert.ok(result.includes(synchronizedOutputDisable));
+	assert.ok(result.indexOf(synchronizedOutputEnable) < result.indexOf(synchronizedOutputDisable));
+
+	const synchronizedOutput = getLastSynchronizedOutput(result);
+	const renderedText = stripVTControlCharacters(synchronizedOutput);
+	assert.ok(renderedText.includes(spinnerCharacter));
+	assert.ok(renderedText.includes('foo'));
+	assert.strictEqual(stripSynchronizedOutputSequences(result), synchronizedOutput);
 });
 
 test('`.id` is not set when created', () => {
@@ -741,7 +806,7 @@ test('multiline content that exactly fits console height is not truncated', () =
 	let written = '';
 	const originalWrite = stream.write;
 	stream.write = function (content) {
-		written = content;
+		written += String(content);
 		return originalWrite.call(this, content);
 	};
 
@@ -755,8 +820,9 @@ test('multiline content that exactly fits console height is not truncated', () =
 	spinner.start();
 	spinner.render();
 
-	assert.ok(written.includes('Line 3'));
-	assert.ok(!written.includes('(content truncated to fit terminal)'));
+	const renderedOutput = stripVTControlCharacters(getLastSynchronizedOutput(written));
+	assert.ok(renderedOutput.includes('Line 3'));
+	assert.ok(!renderedOutput.includes('(content truncated to fit terminal)'));
 
 	spinner.stop();
 });
@@ -840,7 +906,7 @@ const currentClearMethod = transFormTTY => {
 };
 
 test('new clear method test, basic', () => {
-	const transformTTY = new TransformTTY({crlf: true});
+	const transformTTY = applySynchronizedOutputFilter(new TransformTTY({crlf: true}));
 	transformTTY.addSequencer();
 	transformTTY.addSequencer(null, true);
 
@@ -849,7 +915,7 @@ test('new clear method test, basic', () => {
 	it means the `spinner.clear()` method has failed to fully clear output between calls to render.
 	*/
 
-	const currentClearTTY = new TransformTTY({crlf: true});
+	const currentClearTTY = applySynchronizedOutputFilter(new TransformTTY({crlf: true}));
 	currentClearTTY.addSequencer();
 
 	const currentOra = currentClearMethod(currentClearTTY);
@@ -909,11 +975,11 @@ test('new clear method test, basic', () => {
 });
 
 test('new clear method test, erases wrapped lines', () => {
-	const transformTTY = new TransformTTY({crlf: true, columns: 40});
+	const transformTTY = applySynchronizedOutputFilter(new TransformTTY({crlf: true, columns: 40}));
 	transformTTY.addSequencer();
 	transformTTY.addSequencer(null, true);
 
-	const currentClearTTY = new TransformTTY({crlf: true, columns: 40});
+	const currentClearTTY = applySynchronizedOutputFilter(new TransformTTY({crlf: true, columns: 40}));
 	currentClearTTY.addSequencer();
 
 	const currentOra = currentClearMethod(currentClearTTY);
@@ -1073,11 +1139,11 @@ test('new clear method, stress test', () => {
 		s2.indent = indent;
 	};
 
-	const transformTTY = new TransformTTY({crlf: true});
+	const transformTTY = applySynchronizedOutputFilter(new TransformTTY({crlf: true}));
 	transformTTY.addSequencer();
 	transformTTY.addSequencer(null, true);
 
-	const currentClearTTY = new TransformTTY({crlf: true});
+	const currentClearTTY = applySynchronizedOutputFilter(new TransformTTY({crlf: true}));
 	currentClearTTY.addSequencer();
 
 	const currentOra = currentClearMethod(currentClearTTY);
@@ -1354,7 +1420,7 @@ test('multiline text exceeding console height', () => {
 	// Override write to capture content
 	const originalWrite = stream.write;
 	stream.write = function (content) {
-		writtenContent = content;
+		writtenContent += String(content);
 		return originalWrite.call(this, content);
 	};
 
@@ -1368,12 +1434,14 @@ test('multiline text exceeding console height', () => {
 	spinner.start();
 	spinner.render(); // Force a render
 
+	const renderedOutput = stripVTControlCharacters(getLastSynchronizedOutput(writtenContent));
+
 	// When content exceeds viewport, should truncate with message
-	assert.ok(writtenContent.includes('Line 1'), 'Should include some original content');
-	assert.ok(writtenContent.includes('(content truncated to fit terminal)'), 'Should show truncation message');
+	assert.ok(renderedOutput.includes('Line 1'), 'Should include some original content');
+	assert.ok(renderedOutput.includes('(content truncated to fit terminal)'), 'Should show truncation message');
 
 	// Should not include all 10 lines
-	const lineCount = (writtenContent.match(/Line \d+/g) || []).length;
+	const lineCount = (renderedOutput.match(/Line \d+/g) || []).length;
 	assert.ok(lineCount < 10, 'Should truncate some lines');
 	assert.ok(lineCount <= 5, 'Should not exceed terminal height');
 
@@ -1392,7 +1460,7 @@ test('multiline text within console height (no truncation)', () => {
 	// Override write to capture content
 	const originalWrite = stream.write;
 	stream.write = function (content) {
-		writtenContent = content;
+		writtenContent += String(content);
 		return originalWrite.call(this, content);
 	};
 
@@ -1407,9 +1475,10 @@ test('multiline text within console height (no truncation)', () => {
 	spinner.render();
 
 	// When content is within viewport, should not truncate
-	assert.ok(writtenContent.includes('Line 1'), 'Should include first line');
-	assert.ok(writtenContent.includes('Line 5'), 'Should include last line');
-	assert.ok(!writtenContent.includes('(content truncated to fit terminal)'), 'Should not show truncation message');
+	const renderedOutput = stripVTControlCharacters(getLastSynchronizedOutput(writtenContent));
+	assert.ok(renderedOutput.includes('Line 1'), 'Should include first line');
+	assert.ok(renderedOutput.includes('Line 5'), 'Should include last line');
+	assert.ok(!renderedOutput.includes('(content truncated to fit terminal)'), 'Should not show truncation message');
 
 	spinner.stop();
 });
@@ -1426,7 +1495,7 @@ test('multiline text with undefined terminal rows (no truncation)', () => {
 	// Override write to capture content
 	const originalWrite = stream.write;
 	stream.write = function (content) {
-		writtenContent = content;
+		writtenContent += String(content);
 		return originalWrite.call(this, content);
 	};
 
@@ -1441,9 +1510,10 @@ test('multiline text with undefined terminal rows (no truncation)', () => {
 	spinner.render();
 
 	// When terminal height is unknown, should not truncate (no truncation applied)
-	assert.ok(writtenContent.includes('Line 1'), 'Should include first line');
-	assert.ok(writtenContent.includes('Line 10'), 'Should include last line');
-	assert.ok(!writtenContent.includes('(content truncated to fit terminal)'), 'Should not truncate when height is unknown');
+	const renderedOutput = stripVTControlCharacters(getLastSynchronizedOutput(writtenContent));
+	assert.ok(renderedOutput.includes('Line 1'), 'Should include first line');
+	assert.ok(renderedOutput.includes('Line 10'), 'Should include last line');
+	assert.ok(!renderedOutput.includes('(content truncated to fit terminal)'), 'Should not truncate when height is unknown');
 
 	spinner.stop();
 });
@@ -1458,7 +1528,7 @@ test('multiline text with very small console height (no truncation)', () => {
 	let writtenContent = '';
 	const originalWrite = stream.write;
 	stream.write = function (content) {
-		writtenContent = content;
+		writtenContent += String(content);
 		return originalWrite.call(this, content);
 	};
 
@@ -1473,8 +1543,9 @@ test('multiline text with very small console height (no truncation)', () => {
 	spinner.render();
 
 	// When console is too small (1 row), should not truncate because no room for message
-	assert.ok(writtenContent.includes('Line 1'), 'Should include content');
-	assert.ok(!writtenContent.includes('(content truncated to fit terminal)'), 'Should not truncate when console too small for message');
+	const renderedOutput = stripVTControlCharacters(getLastSynchronizedOutput(writtenContent));
+	assert.ok(renderedOutput.includes('Line 1'), 'Should include content');
+	assert.ok(!renderedOutput.includes('(content truncated to fit terminal)'), 'Should not truncate when console too small for message');
 
 	spinner.stop();
 });
