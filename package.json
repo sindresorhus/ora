@@ -1,6 +1,6 @@
 {
 	"name": "ora",
-	"version": "9.2.0",
+	"version": "9.3.0",
 	"description": "Elegant terminal spinner",
 	"license": "MIT",
 	"repository": "sindresorhus/ora",
