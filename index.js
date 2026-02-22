@@ -17,6 +17,8 @@ const SYNCHRONIZED_OUTPUT_DISABLE = '\u001B[?2026l';
 // Global state for concurrent spinner detection
 const activeHooksPerStream = new Map(); // Stream → ora instance
 
+const validColors = new Set(['black', 'red', 'green', 'yellow', 'blue', 'magenta', 'cyan', 'white', 'gray']);
+
 class Ora {
 	#linesToClear = 0;
 	#frameIndex = -1;
@@ -30,7 +32,7 @@ class Ora {
 	#drainHandler;
 	#deferRenderTimer;
 	#isDiscardingStdin = false;
-	color;
+	#color;
 
 	// Helper to execute writes while preventing hook recursion
 	#internalWrite(fn) {
@@ -139,6 +141,10 @@ class Ora {
 
 		if (typeof this.#options.isSilent !== 'boolean') {
 			this.#options.isSilent = false;
+		}
+
+		if (this.#options.interval !== undefined && !(Number.isInteger(this.#options.interval) && this.#options.interval > 0)) {
+			throw new Error('The `interval` option must be a positive integer');
 		}
 
 		// Set *after* `this.#stream`.
@@ -286,6 +292,18 @@ class Ora {
 		return count;
 	}
 
+	get color() {
+		return this.#color;
+	}
+
+	set color(value) {
+		if (value !== undefined && value !== false && !validColors.has(value)) {
+			throw new Error('The `color` option must be a valid color or `false` to disable');
+		}
+
+		this.#color = value;
+	}
+
 	get isEnabled() {
 		return this.#options.isEnabled && !this.#options.isSilent;
 	}
@@ -321,8 +339,8 @@ class Ora {
 		const {frames} = this.#spinner;
 		let frame = frames[this.#frameIndex];
 
-		if (this.color) {
-			frame = chalk[this.color](frame);
+		if (this.#color) {
+			frame = chalk[this.#color](frame);
 		}
 
 		const fullPrefixText = this.#getFullPrefixText(this.#options.prefixText, ' ');

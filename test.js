@@ -1567,6 +1567,57 @@ test('interval validation works correctly', () => {
 	assert.strictEqual(spinner2.interval, 150);
 });
 
+test('interval rejects negative values', () => {
+	assert.throws(() => {
+		ora({interval: -100});
+	}, {message: /positive integer/});
+});
+
+test('interval rejects non-integer values', () => {
+	assert.throws(() => {
+		ora({interval: 1.5});
+	}, {message: /positive integer/});
+});
+
+test('interval rejects zero', () => {
+	assert.throws(() => {
+		ora({interval: 0});
+	}, {message: /positive integer/});
+});
+
+test('color rejects invalid color names', () => {
+	assert.throws(() => {
+		ora({color: 'invalid'});
+	}, {message: /valid color/});
+});
+
+test('color rejects non-string non-false values', () => {
+	assert.throws(() => {
+		ora({color: 123});
+	}, {message: /valid color/});
+});
+
+test('color accepts false to disable', () => {
+	const spinner = ora({color: false, isEnabled: false});
+	assert.strictEqual(spinner.color, false);
+});
+
+test('color accepts valid color names', () => {
+	const spinner = ora({color: 'red', isEnabled: false});
+	assert.strictEqual(spinner.color, 'red');
+});
+
+test('color accepts undefined', () => {
+	const spinner = ora({color: undefined, isEnabled: false});
+	assert.strictEqual(spinner.color, undefined);
+});
+
+test('color setter accepts undefined', () => {
+	const spinner = ora({color: 'green', isEnabled: false});
+	spinner.color = undefined;
+	assert.strictEqual(spinner.color, undefined);
+});
+
 test('text setter handles falsy values correctly', () => {
 	const spinner = ora({color: false});
 	spinner.text = null;
