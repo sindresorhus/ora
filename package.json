@@ -49,14 +49,13 @@
 		"is-interactive": "^2.0.0",
 		"is-unicode-supported": "^2.1.0",
 		"log-symbols": "^7.0.1",
-		"stdin-discarder": "^0.3.1",
+		"stdin-discarder": "^0.3.2",
 		"string-width": "^8.1.0"
 	},
 	"devDependencies": {
 		"@types/node": "^24.5.0",
 		"ava": "^6.4.1",
 		"get-stream": "^9.0.1",
-		"transform-tty": "^1.0.11",
 		"tsd": "^0.33.0",
 		"xo": "^1.2.2"
 	}

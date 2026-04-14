@@ -1,17 +1,325 @@
 /* eslint max-lines: "off" */
+import {Buffer} from 'node:buffer';
 import process from 'node:process';
 import {PassThrough as PassThroughStream} from 'node:stream';
 import {stripVTControlCharacters} from 'node:util';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import getStream from 'get-stream';
-import TransformTTY from 'transform-tty';
 import ora, {oraPromise, spinners} from './index.js';
 
 const spinnerCharacter = process.platform === 'win32' ? '-' : '⠋';
 const synchronizedOutputEnable = '\u001B[?2026h';
 const synchronizedOutputDisable = '\u001B[?2026l';
 const noop = () => {};
+const ansiEscape = '\u001B';
+const ansiControlSequence = new RegExp(`${ansiEscape}\\[[\\d;?]*[A-Za-z]`, 'g');
+const ansiControlSequenceAtStart = new RegExp(`^${ansiEscape}\\[[\\d;?]*[A-Za-z]`);
+const clearSequencePattern = new RegExp(`${ansiEscape}\\[[0-2]?K|${ansiEscape}\\[[0-2]?J`);
+
+class TerminalState {
+	#columns;
+	#lines = [''];
+	#cursorX = 0;
+	#cursorY = 0;
+	#trailingNewline = false;
+
+	constructor({columns = 80} = {}) {
+		this.#columns = columns;
+	}
+
+	get cursorPosition() {
+		return {
+			x: this.#cursorX,
+			y: this.#cursorY,
+		};
+	}
+
+	clear() {
+		this.#lines = [''];
+		this.#cursorX = 0;
+		this.#cursorY = 0;
+		this.#trailingNewline = false;
+	}
+
+	write(content) {
+		let index = 0;
+
+		while (index < content.length) {
+			const character = content[index];
+
+			if (character === '\u001B') {
+				const sequence = content.slice(index).match(ansiControlSequenceAtStart)?.[0];
+				if (sequence) {
+					this.#applyAnsiSequence(sequence);
+					index += sequence.length;
+					continue;
+				}
+			}
+
+			index++;
+			this.#writeCharacter(character);
+		}
+	}
+
+	toString() {
+		let lastIndex = this.#lines.length - 1;
+		while (lastIndex > 0 && this.#lines[lastIndex] === '') {
+			lastIndex--;
+		}
+
+		const result = this.#lines.slice(0, lastIndex + 1).join('\n');
+		return this.#trailingNewline ? result + '\n' : result;
+	}
+
+	#applyAnsiSequence(sequence) {
+		if (sequence.startsWith('\u001B[?')) {
+			return;
+		}
+
+		const finalCharacter = sequence.at(-1);
+		const rawParameters = sequence.slice(2, -1);
+		const parameters = rawParameters === '' ? [] : rawParameters.split(';').map(Number);
+
+		if (finalCharacter === 'G') {
+			this.#cursorX = Math.max(0, (parameters[0] ?? 1) - 1);
+			this.#trailingNewline = false;
+			return;
+		}
+
+		if (finalCharacter === 'A') {
+			this.#cursorY = Math.max(0, this.#cursorY - (parameters[0] ?? 1));
+			this.#trailingNewline = false;
+			return;
+		}
+
+		if (finalCharacter === 'B') {
+			this.#cursorY += parameters[0] ?? 1;
+			this.#ensureCursorLine();
+			this.#trailingNewline = false;
+			return;
+		}
+
+		if (finalCharacter === 'C') {
+			this.#cursorX += parameters[0] ?? 1;
+			this.#trailingNewline = false;
+			return;
+		}
+
+		if (finalCharacter === 'D') {
+			this.#cursorX = Math.max(0, this.#cursorX - (parameters[0] ?? 1));
+			this.#trailingNewline = false;
+			return;
+		}
+
+		if (finalCharacter === 'K') {
+			this.#clearLine(parameters[0] ?? 0);
+		}
+	}
+
+	#clearLine(mode) {
+		this.#ensureCursorLine();
+		const line = this.#lines[this.#cursorY];
+
+		if (mode === 1) {
+			this.#lines[this.#cursorY] = ' '.repeat(this.#cursorX) + line.slice(this.#cursorX);
+			return;
+		}
+
+		if (mode === 2) {
+			this.#lines[this.#cursorY] = '';
+			return;
+		}
+
+		this.#lines[this.#cursorY] = line.slice(0, this.#cursorX);
+	}
+
+	#writeCharacter(character) {
+		if (character === '\r') {
+			this.#cursorX = 0;
+			this.#trailingNewline = false;
+			return;
+		}
+
+		if (character === '\n') {
+			this.#cursorX = 0;
+			this.#cursorY++;
+			this.#ensureCursorLine();
+			this.#trailingNewline = true;
+			return;
+		}
+
+		this.#ensureCursorLine();
+		this.#trailingNewline = false;
+
+		if (this.#cursorX >= this.#columns) {
+			this.#cursorX = 0;
+			this.#cursorY++;
+			this.#ensureCursorLine();
+		}
+
+		const line = this.#lines[this.#cursorY];
+		const paddedLine = line.padEnd(this.#cursorX, ' ');
+		this.#lines[this.#cursorY] = paddedLine.slice(0, this.#cursorX) + character + paddedLine.slice(this.#cursorX + 1);
+		this.#cursorX++;
+	}
+
+	#ensureCursorLine() {
+		while (this.#lines.length <= this.#cursorY) {
+			this.#lines.push('');
+		}
+	}
+}
+
+class LocalTransformTTY extends PassThroughStream {
+	#rows;
+	#columns;
+	#chunks = [];
+	#state;
+	#sequencers = [];
+
+	constructor({rows = 25, columns = 80} = {}) {
+		super();
+		this.#rows = rows;
+		this.#columns = columns;
+		this.#state = new TerminalState({columns});
+		this.isTTY = true;
+	}
+
+	get rows() {
+		return this.#rows;
+	}
+
+	set rows(rows) {
+		this.#rows = rows;
+	}
+
+	get columns() {
+		return this.#columns;
+	}
+
+	set columns(columns) {
+		this.#columns = columns;
+		this.#state = new TerminalState({columns});
+		for (const chunk of this.#chunks) {
+			this.#state.write(chunk);
+		}
+
+		for (const sequencer of this.#sequencers) {
+			sequencer.state = new TerminalState({columns});
+			for (const chunk of sequencer.currentSequence) {
+				sequencer.state.write(chunk);
+			}
+		}
+	}
+
+	write(content, encoding, callback) {
+		const string = Buffer.isBuffer(content) ? content.toString() : String(content);
+		this.#chunks.push(string);
+		this.#state.write(string);
+
+		for (const sequencer of this.#sequencers) {
+			sequencer.currentSequence.push(string);
+			sequencer.state.write(string);
+			sequencer.lastSequence = [...sequencer.currentSequence];
+
+			if (sequencer.add(string, sequencer)) {
+				sequencer.sequences.push([...sequencer.currentSequence]);
+				sequencer.frames.push(sequencer.state.toString());
+
+				if (sequencer.clear(string, sequencer)) {
+					sequencer.currentSequence = [];
+					sequencer.state.clear();
+				}
+			}
+		}
+
+		return super.write(content, encoding, callback);
+	}
+
+	addSequencer(add, clear = false) {
+		add ||= string => !LocalTransformTTY.onlyAnsi(string);
+
+		if (clear === true) {
+			clear = (_string, sequencer) => sequencer.currentSequence.some(sequence => clearSequencePattern.test(sequence));
+		}
+
+		if (typeof clear !== 'function') {
+			clear = () => false;
+		}
+
+		this.#sequencers.push({
+			add,
+			clear,
+			currentSequence: [],
+			lastSequence: [],
+			sequences: [],
+			frames: [],
+			state: new TerminalState({columns: this.#columns}),
+		});
+	}
+
+	getCursorPos() {
+		return this.#state.cursorPosition;
+	}
+
+	getFrames() {
+		if (this.#sequencers.length === 1) {
+			return this.#sequencers[0].frames;
+		}
+
+		return this.#sequencers.map(sequencer => sequencer.frames);
+	}
+
+	getSequenceStrings() {
+		const frames = this.getFrames();
+		if (this.#sequencers.length === 1) {
+			return frames.at(-1);
+		}
+
+		return frames.map(sequencerFrames => sequencerFrames.at(-1));
+	}
+
+	toString() {
+		return this.#state.toString();
+	}
+
+	clearLine(direction = 0) {
+		if (direction === 1) {
+			this.write('\u001B[K');
+			return;
+		}
+
+		if (direction === -1) {
+			this.write('\u001B[1K');
+			return;
+		}
+
+		this.write('\u001B[2K');
+	}
+
+	moveCursor(dx, dy) {
+		if (dx > 0) {
+			this.write(`\u001B[${dx}C`);
+		} else if (dx < 0) {
+			this.write(`\u001B[${Math.abs(dx)}D`);
+		}
+
+		if (dy > 0) {
+			this.write(`\u001B[${dy}B`);
+		} else if (dy < 0) {
+			this.write(`\u001B[${Math.abs(dy)}A`);
+		}
+	}
+
+	cursorTo(x) {
+		this.write(`\u001B[${x + 1}G`);
+	}
+
+	static onlyAnsi(string) {
+		return string.replaceAll('\u0007', '').replaceAll(ansiControlSequence, '') === '';
+	}
+}
 
 const getLastSynchronizedOutput = output => {
 	const lastEnableIndex = output.lastIndexOf(synchronizedOutputEnable);
@@ -312,6 +620,55 @@ test('discardStdin preserves stdin pause state', () => {
 
 	assertPauseStatePreserved(false);
 	assertPauseStatePreserved(true);
+});
+
+test('discardStdin re-signals Ctrl+C even when SIGINT listeners exist', () => {
+	if (process.platform === 'win32') {
+		return;
+	}
+
+	withFakeStdin({}, ({fakeStdin}) => {
+		const stream = getPassThroughStream();
+		let emittedSignal;
+		let killedSignal;
+		const originalListenerCount = process.listenerCount;
+		const originalEmit = process.emit;
+		const originalKill = process.kill;
+
+		process.listenerCount = signal => signal === 'SIGINT' ? 1 : originalListenerCount.call(process, signal);
+		process.emit = (event, ...arguments_) => {
+			if (event === 'SIGINT') {
+				emittedSignal = event;
+				return true;
+			}
+
+			return originalEmit.call(process, event, ...arguments_);
+		};
+
+		process.kill = (processId, signal) => {
+			killedSignal = {processId, signal};
+			return true;
+		};
+
+		const spinner = ora({
+			stream,
+			text: 'foo',
+			isEnabled: true,
+		});
+
+		try {
+			spinner.start();
+			fakeStdin.emit('data', Buffer.from([0x03]));
+		} finally {
+			spinner.stop();
+			process.listenerCount = originalListenerCount;
+			process.emit = originalEmit;
+			process.kill = originalKill;
+		}
+
+		assert.strictEqual(emittedSignal, undefined);
+		assert.deepStrictEqual(killedSignal, {processId: process.pid, signal: 'SIGINT'});
+	});
 });
 
 test('oraPromise() - resolves', async () => {
@@ -906,7 +1263,7 @@ const currentClearMethod = transFormTTY => {
 };
 
 test('new clear method test, basic', () => {
-	const transformTTY = applySynchronizedOutputFilter(new TransformTTY({crlf: true}));
+	const transformTTY = applySynchronizedOutputFilter(new LocalTransformTTY());
 	transformTTY.addSequencer();
 	transformTTY.addSequencer(null, true);
 
@@ -915,7 +1272,7 @@ test('new clear method test, basic', () => {
 	it means the `spinner.clear()` method has failed to fully clear output between calls to render.
 	*/
 
-	const currentClearTTY = applySynchronizedOutputFilter(new TransformTTY({crlf: true}));
+	const currentClearTTY = applySynchronizedOutputFilter(new LocalTransformTTY());
 	currentClearTTY.addSequencer();
 
 	const currentOra = currentClearMethod(currentClearTTY);
@@ -975,11 +1332,11 @@ test('new clear method test, basic', () => {
 });
 
 test('new clear method test, erases wrapped lines', () => {
-	const transformTTY = applySynchronizedOutputFilter(new TransformTTY({crlf: true, columns: 40}));
+	const transformTTY = applySynchronizedOutputFilter(new LocalTransformTTY({columns: 40}));
 	transformTTY.addSequencer();
 	transformTTY.addSequencer(null, true);
 
-	const currentClearTTY = applySynchronizedOutputFilter(new TransformTTY({crlf: true, columns: 40}));
+	const currentClearTTY = applySynchronizedOutputFilter(new LocalTransformTTY({columns: 40}));
 	currentClearTTY.addSequencer();
 
 	const currentOra = currentClearMethod(currentClearTTY);
@@ -1139,11 +1496,11 @@ test('new clear method, stress test', () => {
 		s2.indent = indent;
 	};
 
-	const transformTTY = applySynchronizedOutputFilter(new TransformTTY({crlf: true}));
+	const transformTTY = applySynchronizedOutputFilter(new LocalTransformTTY());
 	transformTTY.addSequencer();
 	transformTTY.addSequencer(null, true);
 
-	const currentClearTTY = applySynchronizedOutputFilter(new TransformTTY({crlf: true}));
+	const currentClearTTY = applySynchronizedOutputFilter(new LocalTransformTTY());
 	currentClearTTY.addSequencer();
 
 	const currentOra = currentClearMethod(currentClearTTY);

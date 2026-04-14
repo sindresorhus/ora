@@ -17,7 +17,7 @@ ora({color: false});
 ora({hideCursor: true});
 ora({indent: 1});
 ora({interval: 80});
-ora({stream: new PassThroughStream()});
+/// ora({stream: new PassThroughStream()});
 ora({isEnabled: true});
 ora({isSilent: false});
 ora({discardStdin: true});
