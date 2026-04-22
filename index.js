@@ -624,9 +624,14 @@ export async function oraPromise(action, options) {
 		throw new TypeError('Parameter `action` must be a Function or a Promise');
 	}
 
-	const {successText, failText} = typeof options === 'object'
+	const {
+		successText,
+		failText,
+		successSymbol,
+		failSymbol,
+	} = typeof options === 'object'
 		? options
-		: {successText: undefined, failText: undefined};
+		: {};
 
 	const spinner = ora(options).start();
 
@@ -634,15 +639,27 @@ export async function oraPromise(action, options) {
 		const promise = actionIsFunction ? action(spinner) : action;
 		const result = await promise;
 
-		spinner.succeed(successText === undefined
+		const text = successText === undefined
 			? undefined
-			: (typeof successText === 'string' ? successText : successText(result)));
+			: (typeof successText === 'string' ? successText : successText(result));
+
+		if (successSymbol === undefined) {
+			spinner.succeed(text);
+		} else {
+			spinner.stopAndPersist({symbol: successSymbol, text});
+		}
 
 		return result;
 	} catch (error) {
-		spinner.fail(failText === undefined
+		const text = failText === undefined
 			? undefined
-			: (typeof failText === 'string' ? failText : failText(error)));
+			: (typeof failText === 'string' ? failText : failText(error));
+
+		if (failSymbol === undefined) {
+			spinner.fail(text);
+		} else {
+			spinner.stopAndPersist({symbol: failSymbol, text});
+		}
 
 		throw error;
 	}

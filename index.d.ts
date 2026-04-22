@@ -162,6 +162,38 @@ export type PromiseOptions<T> = {
 	Keeps the existing text if `undefined`.
 	*/
 	failText?: string | ((error: Error) => string) | undefined;
+
+	/**
+	The symbol to use when the promise is resolved, instead of the default success symbol.
+
+	Useful if you want to customize or disable the symbol.
+
+	Uses the default success symbol if `undefined`.
+
+	@example
+	```
+	import {oraPromise} from 'ora';
+
+	await oraPromise(somePromise, {successSymbol: '🦄'});
+	```
+	*/
+	successSymbol?: string | undefined;
+
+	/**
+	The symbol to use when the promise is rejected, instead of the default failure symbol.
+
+	Useful if you want to customize or disable the symbol.
+
+	Uses the default failure symbol if `undefined`.
+
+	@example
+	```
+	import {oraPromise} from 'ora';
+
+	await oraPromise(somePromise, {failSymbol: '💥'});
+	```
+	*/
+	failSymbol?: string | undefined;
 } & Options;
 
 // eslint-disable-next-line @typescript-eslint/consistent-type-definitions

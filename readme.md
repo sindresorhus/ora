@@ -291,6 +291,26 @@ The new text of the spinner when the promise is rejected.
 
 Keeps the existing text if `undefined`.
 
+##### successSymbol
+
+Type: `string | undefined`
+
+The symbol to use when the promise is resolved, instead of the default success symbol.
+
+Useful if you want to customize or disable the symbol.
+
+Uses the default success symbol if `undefined`.
+
+##### failSymbol
+
+Type: `string | undefined`
+
+The symbol to use when the promise is rejected, instead of the default failure symbol.
+
+Useful if you want to customize or disable the symbol.
+
+Uses the default failure symbol if `undefined`.
+
 ### spinners
 
 Type: `Record<string, Spinner>`

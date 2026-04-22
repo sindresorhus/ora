@@ -708,6 +708,83 @@ test('oraPromise() - rejects', async () => {
 	assert.match(stripVTControlCharacters(await output), /[×✖] foo\n$/);
 });
 
+test('oraPromise() - custom successSymbol', async () => {
+	const stream = getPassThroughStream();
+	const output = getStream(stream);
+	const resolves = Promise.resolve(1);
+
+	await oraPromise(resolves, {
+		stream,
+		text: 'foo',
+		color: false,
+		isEnabled: true,
+		successSymbol: '🦄',
+	});
+
+	stream.end();
+
+	assert.match(stripVTControlCharacters(await output), /🦄 foo\n$/);
+});
+
+test('oraPromise() - custom successSymbol with successText', async () => {
+	const stream = getPassThroughStream();
+	const output = getStream(stream);
+	const resolves = Promise.resolve(1);
+
+	await oraPromise(resolves, {
+		stream,
+		text: 'foo',
+		color: false,
+		isEnabled: true,
+		successSymbol: '🦄',
+		successText: 'done',
+	});
+
+	stream.end();
+
+	assert.match(stripVTControlCharacters(await output), /🦄 done\n$/);
+});
+
+test('oraPromise() - custom failSymbol', async () => {
+	const stream = getPassThroughStream();
+	const output = getStream(stream);
+	const rejects = Promise.reject(new Error()); // eslint-disable-line unicorn/error-message
+
+	try {
+		await oraPromise(rejects, {
+			stream,
+			text: 'foo',
+			color: false,
+			isEnabled: true,
+			failSymbol: '💥',
+		});
+	} catch {}
+
+	stream.end();
+
+	assert.match(stripVTControlCharacters(await output), /💥 foo\n$/);
+});
+
+test('oraPromise() - empty string successSymbol disables symbol', async () => {
+	const stream = getPassThroughStream();
+	const output = getStream(stream);
+	const resolves = Promise.resolve(1);
+
+	await oraPromise(resolves, {
+		stream,
+		text: 'foo',
+		color: false,
+		isEnabled: true,
+		successSymbol: '',
+	});
+
+	stream.end();
+
+	const result = stripVTControlCharacters(await output);
+	assert.match(result, /foo\n$/);
+	assert.doesNotMatch(result, /[√✔] foo\n$/);
+});
+
 test('erases wrapped lines', () => {
 	const stream = getPassThroughStream();
 	stream.isTTY = true;
