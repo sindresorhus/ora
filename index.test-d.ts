@@ -1,5 +1,5 @@
 import {PassThrough as PassThroughStream} from 'node:stream';
-import {expectType} from 'tsd';
+import {expectError, expectType} from 'tsd';
 import type cliSpinners from 'cli-spinners';
 import ora, {oraPromise, spinners} from './index.js';
 
@@ -14,6 +14,7 @@ ora({spinner: {frames: ['-', '+', '-']}});
 ora({spinner: {interval: 80, frames: ['-', '+', '-']}});
 ora({color: 'cyan'});
 ora({color: false});
+expectError(ora({color: true}));
 ora({hideCursor: true});
 ora({indent: 1});
 ora({interval: 80});
@@ -24,7 +25,12 @@ ora({discardStdin: true});
 
 spinner.color = 'yellow';
 spinner.color = false;
+expectError(spinner.color = true);
 spinner.text = 'Loading rainbows';
+spinner.prefixText = 'Loading';
+spinner.prefixText = () => 'Loading dynamically';
+spinner.suffixText = '[loading]';
+spinner.suffixText = () => '[loading dynamically]';
 expectType<boolean>(spinner.isSpinning);
 spinner.spinner = 'dots';
 spinner.indent = 5;

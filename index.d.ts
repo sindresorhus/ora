@@ -56,9 +56,11 @@ export type Options = {
 	/**
 	The color of the spinner.
 
+	Set to `false` to disable the color.
+
 	@default 'cyan'
 	*/
-	readonly color?: Color | boolean;
+	readonly color?: Color | false;
 
 	/**
 	Set to `false` to stop Ora from hiding the cursor.
@@ -208,19 +210,21 @@ export interface Ora {
 
 	No prefix text will be displayed if set to an empty string.
 	*/
-	prefixText: string;
+	prefixText: string | PrefixTextGenerator;
 
 	/**
 	Change the text or function that returns text after the spinner text.
 
 	No suffix text will be displayed if set to an empty string.
 	*/
-	suffixText: string;
+	suffixText: string | SuffixTextGenerator;
 
 	/**
 	Change the spinner color.
+
+	Set to `false` to disable the color.
 	*/
-	color: Color | boolean;
+	color: Color | false;
 
 	/**
 	Change the spinner indent.
