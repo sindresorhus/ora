@@ -508,7 +508,7 @@ class Ora {
 	}
 
 	start(text) {
-		if (text) {
+		if (text !== undefined) {
 			this.text = text;
 		}
 
@@ -618,7 +618,7 @@ export default function ora(options) {
 
 export async function oraPromise(action, options) {
 	const actionIsFunction = typeof action === 'function';
-	const actionIsPromise = typeof action.then === 'function';
+	const actionIsPromise = typeof action?.then === 'function';
 
 	if (!actionIsFunction && !actionIsPromise) {
 		throw new TypeError('Parameter `action` must be a Function or a Promise');
@@ -629,7 +629,7 @@ export async function oraPromise(action, options) {
 		failText,
 		successSymbol,
 		failSymbol,
-	} = typeof options === 'object'
+	} = (typeof options === 'object' && options !== null)
 		? options
 		: {};
 

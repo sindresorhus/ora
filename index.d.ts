@@ -60,7 +60,7 @@ export type Options = {
 
 	@default 'cyan'
 	*/
-	readonly color?: Color | false;
+	readonly color?: Color | false | undefined;
 
 	/**
 	Set to `false` to stop Ora from hiding the cursor.
@@ -163,7 +163,7 @@ export type PromiseOptions<T> = {
 
 	Keeps the existing text if `undefined`.
 	*/
-	failText?: string | ((error: Error) => string) | undefined;
+	failText?: string | ((error: unknown) => string) | undefined;
 
 	/**
 	The symbol to use when the promise is resolved, instead of the default success symbol.
@@ -224,7 +224,7 @@ export interface Ora {
 
 	Set to `false` to disable the color.
 	*/
-	color: Color | false;
+	color: Color | false | undefined;
 
 	/**
 	Change the spinner indent.
@@ -245,6 +245,16 @@ export interface Ora {
 	A boolean indicating whether the instance is currently spinning.
 	*/
 	get isSpinning(): boolean;
+
+	/**
+	A boolean indicating whether the spinner and log text are enabled.
+	*/
+	isEnabled: boolean;
+
+	/**
+	A boolean indicating whether all output is suppressed.
+	*/
+	isSilent: boolean;
 
 	/**
 	The interval between each frame.
@@ -324,7 +334,7 @@ export interface Ora {
 	/**
 	Get a new frame.
 
-	@returns The spinner instance text.
+	@returns The rendered frame text.
 	*/
 	frame(): string;
 }

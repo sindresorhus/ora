@@ -76,9 +76,9 @@ Or an object like:
 
 ##### color
 
-Type: `string | boolean`\
+Type: `string | false`\
 Default: `'cyan'`\
-Values: `'black' | 'red' | 'green' | 'yellow' | 'blue' | 'magenta' | 'cyan' | 'white' | 'gray' | boolean`
+Values: `'black' | 'red' | 'green' | 'yellow' | 'blue' | 'magenta' | 'cyan' | 'white' | 'gray' | false`
 
 The color of the spinner. Set to `false` to disable coloring.
 
@@ -174,6 +174,14 @@ Change the spinner indent.
 
 A boolean indicating whether the instance is currently spinning.
 
+#### .isEnabled <sup>get/set</sup>
+
+A boolean indicating whether the spinner and log text are enabled.
+
+#### .isSilent <sup>get/set</sup>
+
+A boolean indicating whether all output is suppressed.
+
 #### .interval <sup>get</sup>
 
 The interval between each frame.
@@ -267,7 +275,7 @@ await oraPromise(somePromise);
 
 #### action
 
-Type: `Promise | ((spinner: ora.Ora) => Promise)`
+Type: `Promise | ((spinner: Ora) => Promise)`
 
 #### options
 
@@ -285,7 +293,7 @@ Keeps the existing text if `undefined`.
 
 ##### failText
 
-Type: `string | ((error: Error) => string) | undefined`
+Type: `string | ((error: unknown) => string) | undefined`
 
 The new text of the spinner when the promise is rejected.
 

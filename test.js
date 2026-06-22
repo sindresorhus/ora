@@ -538,6 +538,13 @@ test('.start(text)', async () => {
 	assert.match(result, /Test text\n$/);
 });
 
+test('.start(text) accepts empty string', () => {
+	const spinner = ora('foo');
+	spinner.start('');
+	assert.strictEqual(spinner.text, '');
+	spinner.stop();
+});
+
 test('.start() - isEnabled:false outputs text', async () => {
 	const result = await doSpinner(spinner => {
 		spinner.stop();
@@ -1200,6 +1207,21 @@ test('oraPromise() validates `action` type', async () => {
 	});
 });
 
+test('oraPromise() throws the validation error for nullish `action`', async () => {
+	await Promise.all([null, undefined].map(action => assert.rejects(async () => {
+		// @ts-expect-error Intentional invalid input
+		await oraPromise(action, {isEnabled: false});
+	}, {
+		message: 'Parameter `action` must be a Function or a Promise',
+	})));
+});
+
+test('oraPromise() tolerates `null` options', async () => {
+	// @ts-expect-error Intentional invalid input
+	const result = await oraPromise(Promise.resolve('🦄'), null);
+	assert.equal(result, '🦄');
+});
+
 test('clear() is a no-op when stream is not TTY', () => {
 	const stream = getPassThroughStream();
 	let cleared = 0;
@@ -1539,11 +1561,16 @@ test('new clear method test, erases wrapped lines', () => {
 	assert.deepStrictEqual(frames, currentFrames);
 });
 
-test('new clear method, stress test', () => {
+test('new clear method, stress test', t => {
+	// Freeze `Date.now()` so the frame-throttle in `frame()` is deterministic.
+	// Otherwise the two spinners compared below read the wall clock at slightly
+	// different instants across 100 renders and drift onto different frames.
+	t.mock.timers.enable({apis: ['Date']});
+
 	const rando = (min, max) => {
 		min = Math.ceil(min);
 		max = Math.floor(max);
-		return Math.floor(Math.random() * ((max - min) + min));
+		return Math.floor(Math.random() * (max - min)) + min;
 	};
 
 	const rAnDoMaNiMaLs = (min, max) => {

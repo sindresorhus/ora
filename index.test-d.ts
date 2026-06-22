@@ -14,6 +14,7 @@ ora({spinner: {frames: ['-', '+', '-']}});
 ora({spinner: {interval: 80, frames: ['-', '+', '-']}});
 ora({color: 'cyan'});
 ora({color: false});
+ora({color: undefined});
 expectError(ora({color: true}));
 ora({hideCursor: true});
 ora({indent: 1});
@@ -25,6 +26,7 @@ ora({discardStdin: true});
 
 spinner.color = 'yellow';
 spinner.color = false;
+spinner.color = undefined;
 expectError(spinner.color = true);
 spinner.text = 'Loading rainbows';
 spinner.prefixText = 'Loading';
@@ -32,6 +34,12 @@ spinner.prefixText = () => 'Loading dynamically';
 spinner.suffixText = '[loading]';
 spinner.suffixText = () => '[loading dynamically]';
 expectType<boolean>(spinner.isSpinning);
+expectType<boolean>(spinner.isEnabled);
+spinner.isEnabled = false;
+spinner.isEnabled = true;
+expectType<boolean>(spinner.isSilent);
+spinner.isSilent = true;
+spinner.isSilent = false;
 spinner.spinner = 'dots';
 spinner.indent = 5;
 
@@ -80,6 +88,12 @@ void oraPromise(async spinner => {
 	isSilent: false,
 	successText: result => `Resolved with number ${result}`,
 	failText: 'bar',
+});
+void oraPromise(Promise.reject(new Error('Failure')), {
+	failText(error) {
+		expectType<unknown>(error);
+		return error instanceof Error ? error.message : String(error);
+	},
 });
 
 expectType<typeof cliSpinners>(spinners);
