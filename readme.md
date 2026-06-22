@@ -230,7 +230,7 @@ Symbol to replace the spinner with.
 ###### text
 
 Type: `string`\
-Default: Current `'text'`
+Default: Current `text`
 
 Text to be persisted after the symbol.
 
