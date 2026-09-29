@@ -5,11 +5,7 @@
 	"license": "MIT",
 	"repository": "sindresorhus/ora",
 	"funding": "https://github.com/sponsors/sindresorhus",
-	"author": {
-		"name": "Sindre Sorhus",
-		"email": "sindresorhus@gmail.com",
-		"url": "https://sindresorhus.com"
-	},
+	"author": "Sindre Sorhus <sindresorhus@gmail.com> (https://sindresorhus.com)",
 	"type": "module",
 	"exports": {
 		"types": "./index.d.ts",
@@ -17,10 +13,10 @@
 	},
 	"sideEffects": false,
 	"engines": {
-		"node": ">=20"
+		"node": ">=22"
 	},
 	"scripts": {
-		"test": "xo && NODE_ENV=test node --test test.js && tsd"
+		"test": "xo && NODE_ENV=test node --test test.js"
 	},
 	"files": [
 		"index.js",
@@ -43,19 +39,18 @@
 		"idle"
 	],
 	"dependencies": {
-		"chalk": "^5.6.2",
+		"chalk": "^6.0.1",
 		"cli-cursor": "^5.0.0",
-		"cli-spinners": "^3.2.0",
+		"cli-spinners": "^3.4.0",
 		"is-interactive": "^2.0.0",
 		"is-unicode-supported": "^2.1.0",
 		"log-symbols": "^7.0.1",
 		"stdin-discarder": "^0.3.2",
-		"string-width": "^8.1.0"
+		"string-width": "^8.3.0"
 	},
 	"devDependencies": {
-		"@types/node": "^24.5.0",
+		"@types/node": "^26.6.3",
 		"get-stream": "^9.0.1",
-		"tsd": "^0.33.0",
-		"xo": "^1.2.2"
+		"xo": "^5.0.1"
 	}
 }

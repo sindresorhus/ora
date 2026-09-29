@@ -1,4 +1,4 @@
-/* eslint max-lines: "off" */
+/* eslint max-lines: "off" -- the tests share one fake terminal and its helpers, so they stay in one file */
 import {Buffer} from 'node:buffer';
 import process from 'node:process';
 import {PassThrough as PassThroughStream} from 'node:stream';
@@ -9,13 +9,17 @@ import getStream from 'get-stream';
 import ora, {oraPromise, spinners} from './index.js';
 
 const spinnerCharacter = process.platform === 'win32' ? '-' : '⠋';
-const synchronizedOutputEnable = '\u001B[?2026h';
-const synchronizedOutputDisable = '\u001B[?2026l';
+const synchronizedOutputEnable = '\u{1B}[?2026h';
+const synchronizedOutputDisable = '\u{1B}[?2026l';
 const noop = () => {};
-const ansiEscape = '\u001B';
-const ansiControlSequence = new RegExp(`${ansiEscape}\\[[\\d;?]*[A-Za-z]`, 'g');
-const ansiControlSequenceAtStart = new RegExp(`^${ansiEscape}\\[[\\d;?]*[A-Za-z]`);
-const clearSequencePattern = new RegExp(`${ansiEscape}\\[[0-2]?K|${ansiEscape}\\[[0-2]?J`);
+const ansiEscape = '\u{1B}';
+// The escape character itself is what these match on, so a control character in the pattern is the point.
+// eslint-disable-next-line regexp/no-control-character -- the escape character is the subject
+const ansiControlSequence = new RegExp(String.raw`${ansiEscape}\[[\d;?]*[A-Za-z]`, 'gv');
+// eslint-disable-next-line regexp/no-control-character -- the escape character is the subject
+const ansiControlSequenceAtStart = new RegExp(String.raw`^${ansiEscape}\[[\d;?]*[A-Za-z]`, 'v');
+// eslint-disable-next-line regexp/no-control-character -- the escape character is the subject
+const clearSequencePattern = new RegExp(String.raw`${ansiEscape}\[[0-2]?K|${ansiEscape}\[[0-2]?J`, 'v');
 
 class TerminalState {
 	#columns;
@@ -28,52 +32,8 @@ class TerminalState {
 		this.#columns = columns;
 	}
 
-	get cursorPosition() {
-		return {
-			x: this.#cursorX,
-			y: this.#cursorY,
-		};
-	}
-
-	clear() {
-		this.#lines = [''];
-		this.#cursorX = 0;
-		this.#cursorY = 0;
-		this.#trailingNewline = false;
-	}
-
-	write(content) {
-		let index = 0;
-
-		while (index < content.length) {
-			const character = content[index];
-
-			if (character === '\u001B') {
-				const sequence = content.slice(index).match(ansiControlSequenceAtStart)?.[0];
-				if (sequence) {
-					this.#applyAnsiSequence(sequence);
-					index += sequence.length;
-					continue;
-				}
-			}
-
-			index++;
-			this.#writeCharacter(character);
-		}
-	}
-
-	toString() {
-		let lastIndex = this.#lines.length - 1;
-		while (lastIndex > 0 && this.#lines[lastIndex] === '') {
-			lastIndex--;
-		}
-
-		const result = this.#lines.slice(0, lastIndex + 1).join('\n');
-		return this.#trailingNewline ? result + '\n' : result;
-	}
-
 	#applyAnsiSequence(sequence) {
-		if (sequence.startsWith('\u001B[?')) {
+		if (sequence.startsWith('\u{1B}[?')) {
 			return;
 		}
 
@@ -169,9 +129,57 @@ class TerminalState {
 			this.#lines.push('');
 		}
 	}
+
+	get cursorPosition() {
+		return {
+			x: this.#cursorX,
+			y: this.#cursorY,
+		};
+	}
+
+	clear() {
+		this.#lines = [''];
+		this.#cursorX = 0;
+		this.#cursorY = 0;
+		this.#trailingNewline = false;
+	}
+
+	write(content) {
+		let index = 0;
+
+		while (index < content.length) {
+			const character = content[index];
+
+			if (character === '\u{1B}') {
+				const sequence = content.slice(index).match(ansiControlSequenceAtStart)?.[0];
+				if (sequence) {
+					this.#applyAnsiSequence(sequence);
+					index += sequence.length;
+					continue;
+				}
+			}
+
+			index++;
+			this.#writeCharacter(character);
+		}
+	}
+
+	toString() {
+		let lastIndex = this.#lines.length - 1;
+		while (lastIndex > 0 && this.#lines[lastIndex] === '') {
+			lastIndex--;
+		}
+
+		const result = this.#lines.slice(0, lastIndex + 1).join('\n');
+		return this.#trailingNewline ? result + '\n' : result;
+	}
 }
 
 class LocalTransformTTY extends PassThroughStream {
+	static onlyAnsi(string) {
+		return string.replaceAll('\u{7}', '').replaceAll(ansiControlSequence, '') === '';
+	}
+
 	#rows;
 	#columns;
 	#chunks = [];
@@ -223,34 +231,36 @@ class LocalTransformTTY extends PassThroughStream {
 			sequencer.state.write(string);
 			sequencer.lastSequence = [...sequencer.currentSequence];
 
-			if (sequencer.add(string, sequencer)) {
-				sequencer.sequences.push([...sequencer.currentSequence]);
-				sequencer.frames.push(sequencer.state.toString());
-
-				if (sequencer.clear(string, sequencer)) {
-					sequencer.currentSequence = [];
-					sequencer.state.clear();
-				}
+			if (!sequencer.add(string, sequencer)) {
+				continue;
 			}
+
+			sequencer.sequences.push([...sequencer.currentSequence]);
+			sequencer.frames.push(sequencer.state.toString());
+
+			if (!sequencer.clear(string, sequencer)) {
+				continue;
+			}
+
+			sequencer.currentSequence = [];
+			sequencer.state.clear();
 		}
 
 		return super.write(content, encoding, callback);
 	}
 
-	addSequencer(add, clear = false) {
+	addSequencer(add, shouldClear = false) {
 		add ||= string => !LocalTransformTTY.onlyAnsi(string);
 
-		if (clear === true) {
-			clear = (_string, sequencer) => sequencer.currentSequence.some(sequence => clearSequencePattern.test(sequence));
-		}
+		shouldClear &&= (_string, sequencer) => sequencer.currentSequence.some(sequence => clearSequencePattern.test(sequence));
 
-		if (typeof clear !== 'function') {
-			clear = () => false;
+		if (typeof shouldClear !== 'function') {
+			shouldClear = () => false;
 		}
 
 		this.#sequencers.push({
 			add,
-			clear,
+			clear: shouldClear,
 			currentSequence: [],
 			lastSequence: [],
 			sequences: [],
@@ -264,20 +274,12 @@ class LocalTransformTTY extends PassThroughStream {
 	}
 
 	getFrames() {
-		if (this.#sequencers.length === 1) {
-			return this.#sequencers[0].frames;
-		}
-
-		return this.#sequencers.map(sequencer => sequencer.frames);
+		return this.#sequencers.length === 1 ? this.#sequencers[0].frames : this.#sequencers.map(sequencer => sequencer.frames);
 	}
 
 	getSequenceStrings() {
 		const frames = this.getFrames();
-		if (this.#sequencers.length === 1) {
-			return frames.at(-1);
-		}
-
-		return frames.map(sequencerFrames => sequencerFrames.at(-1));
+		return this.#sequencers.length === 1 ? frames.at(-1) : frames.map(sequencerFrames => sequencerFrames.at(-1));
 	}
 
 	toString() {
@@ -286,38 +288,34 @@ class LocalTransformTTY extends PassThroughStream {
 
 	clearLine(direction = 0) {
 		if (direction === 1) {
-			this.write('\u001B[K');
+			this.write('\u{1B}[K');
 			return;
 		}
 
 		if (direction === -1) {
-			this.write('\u001B[1K');
+			this.write('\u{1B}[1K');
 			return;
 		}
 
-		this.write('\u001B[2K');
+		this.write('\u{1B}[2K');
 	}
 
 	moveCursor(dx, dy) {
 		if (dx > 0) {
-			this.write(`\u001B[${dx}C`);
+			this.write(`\u{1B}[${dx}C`);
 		} else if (dx < 0) {
-			this.write(`\u001B[${Math.abs(dx)}D`);
+			this.write(`\u{1B}[${Math.abs(dx)}D`);
 		}
 
 		if (dy > 0) {
-			this.write(`\u001B[${dy}B`);
+			this.write(`\u{1B}[${dy}B`);
 		} else if (dy < 0) {
-			this.write(`\u001B[${Math.abs(dy)}A`);
+			this.write(`\u{1B}[${Math.abs(dy)}A`);
 		}
 	}
 
 	cursorTo(x) {
-		this.write(`\u001B[${x + 1}G`);
-	}
-
-	static onlyAnsi(string) {
-		return string.replaceAll('\u0007', '').replaceAll(ansiControlSequence, '') === '';
+		this.write(`\u{1B}[${x + 1}G`);
 	}
 }
 
@@ -328,30 +326,16 @@ const getLastSynchronizedOutput = output => {
 	}
 
 	const disableIndex = output.indexOf(synchronizedOutputDisable, lastEnableIndex);
-	if (disableIndex === -1) {
-		return output.slice(lastEnableIndex + synchronizedOutputEnable.length);
-	}
-
-	return output.slice(lastEnableIndex + synchronizedOutputEnable.length, disableIndex);
+	return disableIndex === -1 ? output.slice(lastEnableIndex + synchronizedOutputEnable.length) : output.slice(lastEnableIndex + synchronizedOutputEnable.length, disableIndex);
 };
 
-const stripSynchronizedOutputSequences = content => {
-	if (typeof content !== 'string') {
-		return content;
-	}
-
-	return content.replaceAll(synchronizedOutputEnable, '').replaceAll(synchronizedOutputDisable, '');
-};
+const stripSynchronizedOutputSequences = content => typeof content === 'string' ? content.replaceAll(synchronizedOutputEnable, '').replaceAll(synchronizedOutputDisable, '') : content;
 
 const applySynchronizedOutputFilter = stream => {
 	const originalWrite = stream.write;
 	stream.write = function (content, encoding, callback) {
 		const filteredContent = stripSynchronizedOutputSequences(content);
-		if (filteredContent === '') {
-			return true;
-		}
-
-		return originalWrite.call(this, filteredContent, encoding, callback);
+		return filteredContent === '' ? true : originalWrite.call(this, filteredContent, encoding, callback);
 	};
 
 	return stream;
@@ -418,7 +402,7 @@ test('main', async () => {
 	const result = await doSpinner(spinner => {
 		spinner.stop();
 	});
-	assert.match(result, new RegExp(`${spinnerCharacter} foo`));
+	assert.match(result, new RegExp(`${spinnerCharacter} foo`, 'v'));
 });
 
 test('render uses synchronized output sequences', async () => {
@@ -478,56 +462,56 @@ test('.succeed()', async () => {
 	const result = await doSpinner(spinner => {
 		spinner.succeed();
 	});
-	assert.match(result, /[√✔] foo\n$/);
+	assert.match(result, /[√✔] foo\n$/v);
 });
 
 test('.succeed() - with new text', async () => {
 	const result = await doSpinner(spinner => {
 		spinner.succeed('fooed');
 	});
-	assert.match(result, /[√✔] fooed\n$/);
+	assert.match(result, /[√✔] fooed\n$/v);
 });
 
 test('.fail()', async () => {
 	const result = await doSpinner(spinner => {
 		spinner.fail();
 	});
-	assert.match(result, /[×✖] foo\n$/);
+	assert.match(result, /[×✖] foo\n$/v);
 });
 
 test('.fail() - with new text', async () => {
 	const result = await doSpinner(spinner => {
 		spinner.fail('failed to foo');
 	});
-	assert.match(result, /[×✖] failed to foo\n$/);
+	assert.match(result, /[×✖] failed to foo\n$/v);
 });
 
 test('.warn()', async () => {
 	const result = await doSpinner(spinner => {
 		spinner.warn();
 	});
-	assert.match(result, /[‼⚠] foo\n$/);
+	assert.match(result, /[‼⚠] foo\n$/v);
 });
 
 test('.info()', async () => {
 	const result = await doSpinner(spinner => {
 		spinner.info();
 	});
-	assert.match(result, /[iℹ] foo\n$/);
+	assert.match(result, /[iℹ] foo\n$/v);
 });
 
 test('.stopAndPersist() - with new text', async () => {
 	const result = await doSpinner(spinner => {
 		spinner.stopAndPersist({text: 'all done'});
 	});
-	assert.match(result, /\s all done\n$/);
+	assert.match(result, /\s all done\n$/v);
 });
 
 test('.stopAndPersist() - with new symbol and text', async () => {
 	const result = await doSpinner(spinner => {
 		spinner.stopAndPersist({symbol: '@', text: 'all done'});
 	});
-	assert.match(result, /@ all done\n$/);
+	assert.match(result, /@ all done\n$/v);
 });
 
 test('.start(text)', async () => {
@@ -535,7 +519,7 @@ test('.start(text)', async () => {
 		spinner.start('Test text');
 		spinner.stopAndPersist();
 	});
-	assert.match(result, /Test text\n$/);
+	assert.match(result, /Test text\n$/v);
 });
 
 test('.start(text) accepts empty string', () => {
@@ -549,28 +533,28 @@ test('.start() - isEnabled:false outputs text', async () => {
 	const result = await doSpinner(spinner => {
 		spinner.stop();
 	}, {isEnabled: false});
-	assert.match(result, /- foo\n$/);
+	assert.match(result, /- foo\n$/v);
 });
 
 test('.stopAndPersist() - isEnabled:false outputs text', async () => {
 	const result = await doSpinner(spinner => {
 		spinner.stopAndPersist({symbol: '@', text: 'all done'});
 	}, {isEnabled: false});
-	assert.match(result, /- foo\n@ all done\n$/);
+	assert.match(result, /- foo\n@ all done\n$/v);
 });
 
 test('.start() - isSilent:true no output', async () => {
 	const result = await doSpinner(spinner => {
 		spinner.stop();
 	}, {isSilent: true});
-	assert.match(result, /^(?![\s\S])/);
+	assert.match(result, /^$/v);
 });
 
 test('.stopAndPersist() - isSilent:true no output', async () => {
 	const result = await doSpinner(spinner => {
 		spinner.stopAndPersist({symbol: '@', text: 'all done'});
 	}, {isSilent: true});
-	assert.match(result, /^(?![\s\S])/);
+	assert.match(result, /^$/v);
 });
 
 test('.stopAndPersist() - isSilent:true can be disabled', async () => {
@@ -578,7 +562,7 @@ test('.stopAndPersist() - isSilent:true can be disabled', async () => {
 		spinner.isSilent = false;
 		spinner.stopAndPersist({symbol: '@', text: 'all done'});
 	}, {isSilent: true});
-	assert.match(result, /@ all done\n$/);
+	assert.match(result, /@ all done\n$/v);
 });
 
 test('discardStdin toggles raw mode and data listeners on TTY stdin', () => {
@@ -693,7 +677,7 @@ test('oraPromise() - resolves', async () => {
 	await resolves;
 	stream.end();
 
-	assert.match(stripVTControlCharacters(await output), /[√✔] foo\n$/);
+	assert.match(stripVTControlCharacters(await output), /[√✔] foo\n$/v);
 });
 
 test('oraPromise() - rejects', async () => {
@@ -712,7 +696,7 @@ test('oraPromise() - rejects', async () => {
 
 	stream.end();
 
-	assert.match(stripVTControlCharacters(await output), /[×✖] foo\n$/);
+	assert.match(stripVTControlCharacters(await output), /[×✖] foo\n$/v);
 });
 
 test('oraPromise() - custom successSymbol', async () => {
@@ -730,7 +714,7 @@ test('oraPromise() - custom successSymbol', async () => {
 
 	stream.end();
 
-	assert.match(stripVTControlCharacters(await output), /🦄 foo\n$/);
+	assert.match(stripVTControlCharacters(await output), /🦄 foo\n$/v);
 });
 
 test('oraPromise() - custom successSymbol with successText', async () => {
@@ -749,7 +733,7 @@ test('oraPromise() - custom successSymbol with successText', async () => {
 
 	stream.end();
 
-	assert.match(stripVTControlCharacters(await output), /🦄 done\n$/);
+	assert.match(stripVTControlCharacters(await output), /🦄 done\n$/v);
 });
 
 test('oraPromise() - custom failSymbol', async () => {
@@ -769,7 +753,7 @@ test('oraPromise() - custom failSymbol', async () => {
 
 	stream.end();
 
-	assert.match(stripVTControlCharacters(await output), /💥 foo\n$/);
+	assert.match(stripVTControlCharacters(await output), /💥 foo\n$/v);
 });
 
 test('oraPromise() - empty string successSymbol disables symbol', async () => {
@@ -788,8 +772,8 @@ test('oraPromise() - empty string successSymbol disables symbol', async () => {
 	stream.end();
 
 	const result = stripVTControlCharacters(await output);
-	assert.match(result, /foo\n$/);
-	assert.doesNotMatch(result, /[√✔] foo\n$/);
+	assert.match(result, /foo\n$/v);
+	assert.doesNotMatch(result, /[√✔] foo\n$/v);
 });
 
 test('erases wrapped lines', () => {
@@ -906,7 +890,7 @@ test('reset frameIndex when setting new spinner', async () => {
 	stream.end();
 
 	assert.strictEqual(spinner._frameIndex, 0);
-	assert.match(stripVTControlCharacters(await output), /foo baz/);
+	assert.match(stripVTControlCharacters(await output), /foo baz/v);
 });
 
 test('set the correct interval when changing spinner (object case)', () => {
@@ -938,23 +922,22 @@ test('set the correct interval when changing spinner (string case)', () => {
 	assert.strictEqual(spinner.interval, expectedInterval);
 });
 
-if (process.platform !== 'win32') {
-	test('throw when incorrect spinner', () => {
-		const spinner = ora();
+// The name is rejected before anything is rendered, so this holds on every platform
+test('throw when incorrect spinner', () => {
+	const spinner = ora();
 
-		assert.throws(() => {
-			spinner.spinner = 'random-string-12345';
-		}, {
-			message: /no built-in spinner/,
-		});
+	assert.throws(() => {
+		spinner.spinner = 'random-string-12345';
+	}, {
+		message: /no built-in spinner/v,
 	});
-}
+});
 
 test('throw when spinner is set to `default`', () => {
 	assert.throws(() => {
 		ora({spinner: 'default'});
 	}, {
-		message: /no built-in spinner/,
+		message: /no built-in spinner/v,
 	});
 });
 
@@ -1022,98 +1005,98 @@ test('.stopAndPersist() with prefixText', async () => {
 	const result = await doSpinner(spinner => {
 		spinner.stopAndPersist({symbol: '@', text: 'foo'});
 	}, {prefixText: 'bar'});
-	assert.match(result, /bar @ foo\n$/);
+	assert.match(result, /bar @ foo\n$/v);
 });
 
 test('.stopAndPersist() with empty prefixText', async () => {
 	const result = await doSpinner(spinner => {
 		spinner.stopAndPersist({symbol: '@', text: 'foo'});
 	}, {prefixText: ''});
-	assert.match(result, /@ foo\n$/);
+	assert.match(result, /@ foo\n$/v);
 });
 
 test('.stopAndPersist() with manual prefixText', async () => {
 	const result = await doSpinner(spinner => {
 		spinner.stopAndPersist({symbol: '@', prefixText: 'baz', text: 'foo'});
 	}, {prefixText: 'bar'});
-	assert.match(result, /baz @ foo\n$/);
+	assert.match(result, /baz @ foo\n$/v);
 });
 
 test('.stopAndPersist() with manual empty prefixText', async () => {
 	const result = await doSpinner(spinner => {
 		spinner.stopAndPersist({symbol: '@', prefixText: '', text: 'foo'});
 	}, {prefixText: 'bar'});
-	assert.match(result, /@ foo\n$/);
+	assert.match(result, /@ foo\n$/v);
 });
 
 test('.stopAndPersist() with dynamic prefixText', async () => {
 	const result = await doSpinner(spinner => {
 		spinner.stopAndPersist({symbol: '&', prefixText: () => 'babeee', text: 'yorkie'});
 	}, {prefixText: () => 'babeee'});
-	assert.match(result, /babeee & yorkie\n$/);
+	assert.match(result, /babeee & yorkie\n$/v);
 });
 
 test('.stopAndPersist() with suffixText', async () => {
 	const result = await doSpinner(spinner => {
 		spinner.stopAndPersist({symbol: '@', text: 'foo'});
 	}, {suffixText: 'bar'});
-	assert.match(result, /@ foo bar\n$/);
+	assert.match(result, /@ foo bar\n$/v);
 });
 
 test('.stopAndPersist() with empty suffixText', async () => {
 	const result = await doSpinner(spinner => {
 		spinner.stopAndPersist({symbol: '@', text: 'foo'});
 	}, {suffixText: ''});
-	assert.match(result, /@ foo\n$/);
+	assert.match(result, /@ foo\n$/v);
 });
 
 test('.stopAndPersist() with manual suffixText', async () => {
 	const result = await doSpinner(spinner => {
 		spinner.stopAndPersist({symbol: '@', suffixText: 'baz', text: 'foo'});
 	}, {suffixText: 'bar'});
-	assert.match(result, /@ foo baz\n$/);
+	assert.match(result, /@ foo baz\n$/v);
 });
 
 test('.stopAndPersist() with manual empty suffixText', async () => {
 	const result = await doSpinner(spinner => {
 		spinner.stopAndPersist({symbol: '@', suffixText: '', text: 'foo'});
 	}, {suffixText: 'bar'});
-	assert.match(result, /@ foo\n$/);
+	assert.match(result, /@ foo\n$/v);
 });
 
 test('.stopAndPersist() with dynamic suffixText', async () => {
 	const result = await doSpinner(spinner => {
 		spinner.stopAndPersist({symbol: '&', suffixText: () => 'babeee', text: 'yorkie'});
 	}, {suffixText: () => 'babeee'});
-	assert.match(result, /& yorkie babeee\n$/);
+	assert.match(result, /& yorkie babeee\n$/v);
 });
 
 test('.stopAndPersist() with prefixText and suffixText', async () => {
 	const result = await doSpinner(spinner => {
 		spinner.stopAndPersist({symbol: '@', text: 'foo'});
 	}, {prefixText: 'bar', suffixText: 'baz'});
-	assert.match(result, /bar @ foo baz\n$/);
+	assert.match(result, /bar @ foo baz\n$/v);
 });
 
 test('.stopAndPersist() with dynamic prefixText and suffixText', async () => {
 	const result = await doSpinner(spinner => {
 		spinner.stopAndPersist({symbol: '#', text: 'work'});
 	}, {prefixText: () => 'pre', suffixText: () => 'post'});
-	assert.match(result, /pre # work post\n$/);
+	assert.match(result, /pre # work post\n$/v);
 });
 
 test('.stopAndPersist() with dynamic empty prefixText and suffixText has no stray spaces', async () => {
 	const result = await doSpinner(spinner => {
 		spinner.stopAndPersist({symbol: '#', text: 'work'});
 	}, {prefixText: () => '', suffixText: () => ''});
-	assert.match(result, /# work\n$/);
+	assert.match(result, /# work\n$/v);
 });
 
 test('.stopAndPersist() with empty symbol does not add separator', async () => {
 	const result = await doSpinner(spinner => {
 		spinner.stopAndPersist({symbol: '', text: 'done'});
 	}, {});
-	assert.match(result, /done\n$/);
+	assert.match(result, /done\n$/v);
 });
 
 // Additional focused edge-case tests
@@ -1174,7 +1157,7 @@ test('oraPromise(function) passes spinner and supports successText function', as
 	});
 
 	stream.end();
-	assert.match(stripVTControlCharacters(await output), /[√✔] done: 7\n$/);
+	assert.match(stripVTControlCharacters(await output), /[√✔] done: 7\n$/v);
 });
 
 test('oraPromise(function) rejects and supports failText function', async () => {
@@ -1195,7 +1178,7 @@ test('oraPromise(function) rejects and supports failText function', async () => 
 	} catch {}
 
 	stream.end();
-	assert.match(stripVTControlCharacters(await output), /[×✖] oops: boom\n$/);
+	assert.match(stripVTControlCharacters(await output), /[×✖] oops: boom\n$/v);
 });
 
 test('oraPromise() validates `action` type', async () => {
@@ -1311,7 +1294,7 @@ test('start() with empty text and isEnabled:false produces no output', async () 
 	stream.end();
 
 	const text = stripVTControlCharacters(await output);
-	assert.match(text, /^(?![\s\S])/);
+	assert.match(text, /^$/v);
 });
 
 // New clear method tests
@@ -1329,7 +1312,7 @@ const currentClearMethod = transFormTTY => {
 		},
 	});
 
-	let firstIndent = true;
+	let isFirstIndent = true;
 
 	spinner.clear = function () {
 		if (!this._isEnabled || !this._stream.isTTY) {
@@ -1348,9 +1331,9 @@ const currentClearMethod = transFormTTY => {
 		// It's too quick to be noticeable, but indent does not get applied
 		// for the first render if `linesToClear === 0`. The new clear method
 		// doesn't have this issue, since it's called outside of the loop.
-		if (this._linesToClear === 0 && firstIndent && this.indent) {
+		if (isFirstIndent && this._linesToClear === 0 && this.indent) {
 			this._stream.cursorTo(this.indent);
-			firstIndent = false;
+			isFirstIndent = false;
 		}
 
 		this._linesToClear = 0;
@@ -1442,7 +1425,7 @@ test('new clear method test, erases wrapped lines', () => {
 
 	const cursorAtRow = () => {
 		const cursor = transformTTY.getCursorPos();
-		return cursor.y === 0 ? 0 : cursor.y * -1;
+		return cursor.y === 0 ? 0 : -cursor.y;
 	};
 
 	const clearedLines = () => transformTTY.toString().split('\n').length;
@@ -1576,7 +1559,7 @@ test('new clear method, stress test', t => {
 	const rAnDoMaNiMaLs = (min, max) => {
 		const length = rando(min, max);
 		let result = '';
-		const THEAMINALS = ['🐯', '🦁', '🐮', '🐷', '🐽', '🐸', '🐙', '🐵', '🐦', '🐧', '🐔', '🐒', '🙉', '🙈', '🐣', '🐥', '🐺', '🐗', '🐴', '🦄', '🐝', '🐛', ...Array.from({length: 5}).fill('\n')];
+		const THEAMINALS = ['🐯', '🦁', '🐮', '🐷', '🐽', '🐸', '🐙', '🐵', '🐦', '🐧', '🐔', '🐒', '🙉', '🙈', '🐣', '🐥', '🐺', '🐗', '🐴', '🦄', '🐝', '🐛', ...Array.from({length: 5}, () => '\n')];
 
 		for (let i = 0; i < length; i++) {
 			result += THEAMINALS[Math.floor(Math.random() * THEAMINALS.length)];
@@ -1632,7 +1615,7 @@ test('new clear method, stress test', t => {
 			let {text} = spinner;
 			const loops = rando(1, 10);
 
-			for (let x = 0; x < loops; x++) {
+			for (let insertion = 0; insertion < loops; insertion++) {
 				const pos = Math.floor(Math.random() * text.length);
 				text = text.slice(0, pos) + '\n' + text.slice(pos + 1);
 			}
@@ -1651,9 +1634,9 @@ test('new clear method, stress test', t => {
 	const currentFrames = currentClearTTY.getFrames();
 	const [frames, clearedFrames] = transformTTY.getFrames();
 
-	assert.deepStrictEqual(frames, clearedFrames);
+	t.assert.deepStrictEqual(frames, clearedFrames);
 
-	assert.deepStrictEqual(frames.slice(0, currentFrames.length), currentFrames);
+	t.assert.deepStrictEqual(frames.slice(0, currentFrames.length), currentFrames);
 
 	// Console.log(frames);
 	// console.log(clearFrames);
@@ -1902,7 +1885,7 @@ test('multiline text exceeding console height', () => {
 	assert.ok(renderedOutput.includes('(content truncated to fit terminal)'), 'Should show truncation message');
 
 	// Should not include all 10 lines
-	const lineCount = (renderedOutput.match(/Line \d+/g) || []).length;
+	const lineCount = (renderedOutput.match(/Line \d+/gv) || []).length;
 	assert.ok(lineCount < 10, 'Should truncate some lines');
 	assert.ok(lineCount <= 5, 'Should not exceed terminal height');
 
@@ -2015,7 +1998,7 @@ test('invalid frames throws descriptive error', () => {
 	const spinner = ora({isEnabled: false});
 	assert.throws(() => {
 		spinner.spinner = {frames: []};
-	}, {message: /non-empty/});
+	}, {message: /non-empty/v});
 });
 
 test('interval validation works correctly', () => {
@@ -2031,31 +2014,31 @@ test('interval validation works correctly', () => {
 test('interval rejects negative values', () => {
 	assert.throws(() => {
 		ora({interval: -100});
-	}, {message: /positive integer/});
+	}, {message: /positive integer/v});
 });
 
 test('interval rejects non-integer values', () => {
 	assert.throws(() => {
 		ora({interval: 1.5});
-	}, {message: /positive integer/});
+	}, {message: /positive integer/v});
 });
 
 test('interval rejects zero', () => {
 	assert.throws(() => {
 		ora({interval: 0});
-	}, {message: /positive integer/});
+	}, {message: /positive integer/v});
 });
 
 test('color rejects invalid color names', () => {
 	assert.throws(() => {
 		ora({color: 'invalid'});
-	}, {message: /valid color/});
+	}, {message: /valid color/v});
 });
 
 test('color rejects non-string non-false values', () => {
 	assert.throws(() => {
 		ora({color: 123});
-	}, {message: /valid color/});
+	}, {message: /valid color/v});
 });
 
 test('color accepts false to disable', () => {
@@ -2204,7 +2187,7 @@ test('oraPromise handles sync exceptions', async () => {
 	}, {message: 'sync error'});
 });
 
-test('handles external writes to stream while spinning', async () => {
+test('handles external writes to stream while spinning', () => {
 	const stream = getPassThroughStream();
 	stream.isTTY = true;
 	const writes = [];
@@ -2238,13 +2221,14 @@ test('handles external writes to stream while spinning', async () => {
 	// Verify ordering: external log appears before success message
 	const externalIndex = writes.findIndex(w => w.includes('External log'));
 	const doneIndex = writes.findIndex(w => w.includes('done'));
-	assert.ok(externalIndex !== -1 && doneIndex !== -1, 'Both messages should exist');
+	assert.notStrictEqual(externalIndex, -1, 'the external log should exist');
+	assert.notStrictEqual(doneIndex, -1, 'the done message should exist');
 	assert.ok(externalIndex < doneIndex, 'External log should appear before done message');
 
 	stream.end();
 });
 
-test('handles multiple external writes while spinning', async () => {
+test('handles multiple external writes while spinning', () => {
 	const stream = getPassThroughStream();
 	stream.isTTY = true;
 	const writes = [];
@@ -2322,7 +2306,7 @@ test('partial external writes defer spinner renders until newline or timeout', t
 	const stream = getPassThroughStream();
 	stream.isTTY = true;
 
-	t.mock.timers.enable({appliesTo: ['setTimeout', 'setInterval']});
+	t.mock.timers.enable({apis: ['setTimeout', 'setInterval', 'Date']});
 
 	const spinner = ora({
 		stream,
@@ -2340,18 +2324,18 @@ test('partial external writes defer spinner renders until newline or timeout', t
 
 		stream.write('Partial chunk without newline');
 		t.mock.timers.tick(199);
-		assert.strictEqual(spinner._frameIndex, baselineFrameIndex, 'frame index should not advance within deferral window');
+		t.assert.strictEqual(spinner._frameIndex, baselineFrameIndex, 'frame index should not advance within deferral window');
 
 		stream.write('\n');
-		assert.ok(spinner._frameIndex > baselineFrameIndex, 'newline should resume rendering immediately');
+		t.assert.ok(spinner._frameIndex > baselineFrameIndex, 'newline should resume rendering immediately');
 		const afterNewlineFrameIndex = spinner._frameIndex;
 
 		stream.write('Another partial chunk');
 		t.mock.timers.tick(199);
-		assert.strictEqual(spinner._frameIndex, afterNewlineFrameIndex, 'second partial chunk should defer renders again');
+		t.assert.strictEqual(spinner._frameIndex, afterNewlineFrameIndex, 'second partial chunk should defer renders again');
 
 		t.mock.timers.tick(1);
-		assert.ok(spinner._frameIndex > afterNewlineFrameIndex, 'timeout should eventually resume rendering');
+		t.assert.ok(spinner._frameIndex > afterNewlineFrameIndex, 'timeout should eventually resume rendering');
 	} finally {
 		spinner.stop();
 		stream.end();
@@ -2397,10 +2381,8 @@ test('handles stream write errors gracefully', () => {
 
 	// If flag was stuck at true, this external write would pass through as internal (no clear/render)
 	// and subsequent operations would fail. Verify it works correctly:
-	assert.doesNotThrow(() => {
-		stream.write('Should work now\n');
-		spinner.stop();
-	});
+	stream.write('Should work now\n');
+	spinner.stop();
 });
 
 test('hooks both stdout and stderr', () => {
