@@ -120,7 +120,7 @@ Type: `boolean`
 
 Force enable/disable the spinner. If not specified, the spinner will be enabled if the `stream` is being run inside a TTY context (not spawned or piped) and/or not in a CI environment.
 
-Note that `{isEnabled: false}` doesn't mean it won't output anything. It just means it won't output the spinner, colors, and other ansi escape codes. It will still log text.
+Note that `{isEnabled: false}` doesn't mean it won't output anything. It just means it won't output the spinner, colors, and other ansi escape codes. It will still log text, and every `.start()` call logs a line. Use `isSilent` to suppress all output.
 
 ##### isSilent
 
@@ -362,7 +362,24 @@ spinner.succeed('Done!');
 The output will be clean with each log appearing above the spinner. This works seamlessly without requiring any special logging methods. Both `console.log()` (stdout) and `console.error()`/`console.warn()` (stderr) are supported.
 
 > [!NOTE]
+> Write complete lines. The spinner pauses while an output line is unfinished and resumes when a newline is written. Unfinished output is never erased or replayed. To show progress, set the `text` property instead:
+
+```js
+const spinner = ora().start();
+
+emitter.on('progress', percent => {
+	spinner.text = `Downloading ${percent}%`;
+});
+```
+
+> [!NOTE]
 > Don't run multiple spinners concurrently. Use one spinner at a time.
+
+### What happens when the text is taller than my terminal?
+
+Ora truncates it to one row less than the terminal height, so it never scrolls out of reach, and ends it with `... (content truncated to fit terminal)`. Output above the spinner can still scroll into the scrollback, since a terminal cannot report the cursor row.
+
+Cleanup after resizing is best effort because terminals handle reflow differently. Resizing the terminal may leave part of the previous frame visible.
 
 ### Can I display multiple spinners simultaneously?
 

@@ -97,7 +97,7 @@ export type Options = {
 	/**
 	Force enable/disable the spinner. If not specified, the spinner will be enabled if the `stream` is being run inside a TTY context (not spawned or piped) and/or not in a CI environment.
 
-	Note that `{isEnabled: false}` doesn't mean it won't output anything. It just means it won't output the spinner, colors, and other ansi escape codes. It will still log text.
+	Note that `{isEnabled: false}` doesn't mean it won't output anything. It just means it won't output the spinner, colors, and other ansi escape codes. It will still log text, and every `.start()` call logs a line. Use `isSilent` to suppress all output.
 	*/
 	readonly isEnabled?: boolean;
 
